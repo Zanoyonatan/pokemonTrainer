@@ -1,0 +1,6 @@
+@pokemonTrainer_HostAddress = http://localhost:5103
+
+GET {{pokemonTrainer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
