@@ -191,7 +191,29 @@ public class PokeApiPokemonOfficialArtwork
     [JsonPropertyName("front_default")]
     public string? FrontDefault { get; set; }
 }
+
 ```
+## Image Handling Strategy
+
+For the initial implementation, store only the Pokémon image URL returned by PokeAPI.
+
+Prefer the official artwork image when available:
+
+```text
+sprites.other.official-artwork.front_default
+```
+
+If official artwork is not available, fall back to:
+
+```text
+sprites.front_default
+```
+
+Do not download images into the backend or store them in the database at this stage.
+
+The frontend should later handle broken image URLs by displaying a local placeholder image.
+
+For a production-grade implementation, image caching or storing images in Blob Storage / CDN could be added later to reduce runtime dependency on external image URLs and improve reliability.
 
 ## Create PokeApiPokemonDetails.cs
 
