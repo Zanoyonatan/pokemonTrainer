@@ -5,7 +5,7 @@ using pokemonTrainer.Data;
 using pokemonTrainer.Models;
 using pokemonTrainer.Services;
 using System.Text;
-
+using pokemonTrainer.Infrastructure;
 namespace pokemonTrainer
 {
     public class Program
@@ -24,6 +24,12 @@ namespace pokemonTrainer
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddHttpClient<PokeApiClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://pokeapi.co/api/v2/");
+                client.Timeout = TimeSpan.FromSeconds(20);
+            });
+
             builder.Services
 
             .AddIdentityCore<ApplicationUser>(options =>
@@ -39,6 +45,7 @@ namespace pokemonTrainer
 
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
+         
             var jwtSection = builder.Configuration.GetSection("Jwt");
 
             var jwtKey = jwtSection["Key"]
