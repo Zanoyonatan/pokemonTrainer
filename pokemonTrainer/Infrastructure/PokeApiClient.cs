@@ -12,15 +12,22 @@ public class PokeApiClient
         _httpClient = httpClient;
     }
 
-    public async Task<PokeApiListResponse?> GetPokemonListAsync(int limit, int offset = 0)
+    public async Task<PokeApiListResponse?> GetPokemonListAsync(
+        int limit,
+        int offset = 0,
+        CancellationToken cancellationToken = default)
     {
         return await _httpClient.GetFromJsonAsync<PokeApiListResponse>(
-            $"pokemon?limit={limit}&offset={offset}");
+            $"pokemon?limit={limit}&offset={offset}",
+            cancellationToken);
     }
 
-    public async Task<PokeApiPokemonDetails?> GetPokemonDetailsAsync(string nameOrId)
+    public async Task<PokeApiPokemonDetails?> GetPokemonDetailsAsync(
+        string nameOrId,
+        CancellationToken cancellationToken = default)
     {
         return await _httpClient.GetFromJsonAsync<PokeApiPokemonDetails>(
-            $"pokemon/{nameOrId}");
+            $"pokemon/{nameOrId}",
+            cancellationToken);
     }
 }

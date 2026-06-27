@@ -6,6 +6,7 @@ using pokemonTrainer.Models;
 using pokemonTrainer.Services;
 using System.Text;
 using pokemonTrainer.Infrastructure;
+using pokemonTrainer.Workers;
 namespace pokemonTrainer
 {
     public class Program
@@ -29,6 +30,9 @@ namespace pokemonTrainer
                 client.BaseAddress = new Uri("https://pokeapi.co/api/v2/");
                 client.Timeout = TimeSpan.FromSeconds(20);
             });
+
+            
+
 
             builder.Services
 
@@ -71,6 +75,10 @@ namespace pokemonTrainer
                     };
                 });
             builder.Services.AddScoped<JwtTokenService>();
+            builder.Services.AddSingleton<PokemonImportStatusService>();
+            builder.Services.AddScoped<PokemonImportService>();
+            builder.Services.AddHostedService<PokemonStartupImportWorker>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
