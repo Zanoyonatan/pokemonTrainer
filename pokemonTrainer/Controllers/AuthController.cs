@@ -1,90 +1,51 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
-using pokemonTrainer.Models;
-using pokemonTrainer.Services;
-using pokemonTrainer.DTOs.Auth;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using pokemonTrainer.DTOs.Auth;
+using pokemonTrainer.DTOs.Common;
+using pokemonTrainer.Services;
+
 namespace pokemonTrainer.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly JwtTokenService _jwtTokenService;
+    private readonly AuthService _authService;
 
-    public AuthController(
-        UserManager<ApplicationUser> userManager,
-        JwtTokenService jwtTokenService)
+    public AuthController(AuthService authService)
     {
-        _userManager = userManager;
-        _jwtTokenService = jwtTokenService;
+        _authService = authService;
     }
+
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterRequest request)
+    public async Task<IActionResult> Register(
+        RegisterRequest request)
     {
-        var existingUser =
-            await _userManager.FindByEmailAsync(request.Email);
+        var result = await _authService.RegisterAsync(request);
 
-        if (existingUser != null)
+        if (!result.Success)
         {
-            return BadRequest("Email already exists.");
+            return ToActionResult(result);
         }
 
-        var user = new ApplicationUser
-        {
-            UserName = request.Email,
-            Email = request.Email,
-            DisplayName = request.DisplayName
-        };
-
-        var result =
-            await _userManager.CreateAsync(user, request.Password);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(result.Errors);
-        }
-
-        return Ok();
+        return Ok(result.Data);
     }
+
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequest request)
+    public async Task<IActionResult> Login(
+        LoginRequest request)
     {
-        var user =
-            await _userManager.FindByEmailAsync(request.Email);
+        var result = await _authService.LoginAsync(request);
 
-        if (user == null)
+        if (!result.Success)
         {
-            return Unauthorized("Invalid email or password.");
+            return ToActionResult(result);
         }
 
-        var passwordValid =
-            await _userManager.CheckPasswordAsync(user, request.Password);
-
-        if (!passwordValid)
-        {
-            return Unauthorized("Invalid email or password.");
-        }
-
-        user.LastLoginAt = DateTime.UtcNow;
-
-        var tokenResult =
-            _jwtTokenService.CreateToken(user);
-
-        return Ok(new AuthResponse
-        {
-            Token = tokenResult.Token,
-            ExpiresAt = tokenResult.ExpiresAt,
-            User = new UserInfoResponse
-            {
-                Id = user.Id,
-                Email = user.Email ?? string.Empty,
-                DisplayName = user.DisplayName
-            }
-        });
+        return Ok(result.Data);
     }
+
     [Authorize]
     [HttpGet("me")]
     public IActionResult Me()
@@ -95,5 +56,23 @@ public class AuthController : ControllerBase
             Email = User.FindFirstValue(ClaimTypes.Email),
             Name = User.FindFirstValue(ClaimTypes.Name)
         });
+    }
+
+    private IActionResult ToActionResult<T>(ServiceResult<T> result)
+    {
+        var error = new
+        {
+            result.ErrorCode,
+            result.Message
+        };
+
+        return result.ErrorCode switch
+        {
+            "EMAIL_ALREADY_EXISTS" => BadRequest(error),
+            "REGISTRATION_FAILED" => BadRequest(error),
+            "INVALID_CREDENTIALS" => Unauthorized(error),
+            "LOGIN_UPDATE_FAILED" => BadRequest(error),
+            _ => BadRequest(error)
+        };
     }
 }

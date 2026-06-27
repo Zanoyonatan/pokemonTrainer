@@ -78,7 +78,9 @@ namespace pokemonTrainer
             builder.Services.AddSingleton<PokemonImportStatusService>();
             builder.Services.AddScoped<PokemonImportService>();
             builder.Services.AddHostedService<PokemonStartupImportWorker>();
-
+            builder.Services.AddScoped<DreamTeamService>();
+            builder.Services.AddScoped<PokemonService>();
+            builder.Services.AddScoped<AuthService>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

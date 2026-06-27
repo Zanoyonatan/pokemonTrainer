@@ -1,9 +1,5 @@
-﻿using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using pokemonTrainer.Data;
-using pokemonTrainer.DTOs.Pokemon;
-using pokemonTrainer.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using pokemonTrainer.DTOs.Common;
 using pokemonTrainer.Services;
 
 namespace pokemonTrainer.Controllers;
@@ -12,19 +8,14 @@ namespace pokemonTrainer.Controllers;
 [Route("api/[controller]")]
 public class PokemonController : ControllerBase
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
-    private readonly ApplicationDbContext _dbContext;
+    private readonly PokemonService _pokemonService;
     private readonly PokemonImportStatusService _statusService;
 
     public PokemonController(
-        ApplicationDbContext dbContext,
+        PokemonService pokemonService,
         PokemonImportStatusService statusService)
     {
-        _dbContext = dbContext;
+        _pokemonService = pokemonService;
         _statusService = statusService;
     }
 
@@ -41,61 +32,12 @@ public class PokemonController : ControllerBase
             return PokemonDataNotReady();
         }
 
-        page = Math.Max(page, 1);
-        pageSize = Math.Clamp(pageSize, 1, 100);
-
-        var query = _dbContext.Pokemons
-            .AsNoTracking()
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var normalizedSearch = search.Trim().ToLowerInvariant();
-
-            if (int.TryParse(normalizedSearch, out var pokeApiId))
-            {
-                query = query.Where(p =>
-                    p.PokeApiId == pokeApiId ||
-                    EF.Functions.Like(p.Name, $"%{normalizedSearch}%"));
-            }
-            else
-            {
-                query = query.Where(p =>
-                    EF.Functions.Like(p.Name, $"%{normalizedSearch}%"));
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(type))
-        {
-            var normalizedType = type.Trim().ToLowerInvariant();
-
-            query = query.Where(p =>
-                p.PokemonTypes.Any(pt =>
-                    pt.PokemonType.Name == normalizedType));
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var pokemons = await query
-            .OrderBy(p => p.PokeApiId)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Include(p => p.PokemonTypes)
-            .ThenInclude(pt => pt.PokemonType)
-            .ToListAsync(cancellationToken);
-
-        var response = new PokemonPagedResponse
-        {
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = totalCount == 0
-                ? 0
-                : (int)Math.Ceiling(totalCount / (double)pageSize),
-            Items = pokemons
-                .Select(MapToListItem)
-                .ToList()
-        };
+        var response = await _pokemonService.GetPagedAsync(
+            search,
+            type,
+            page,
+            pageSize,
+            cancellationToken);
 
         return Ok(response);
     }
@@ -109,13 +51,10 @@ public class PokemonController : ControllerBase
             return PokemonDataNotReady();
         }
 
-        var types = await _dbContext.PokemonTypes
-            .AsNoTracking()
-            .OrderBy(t => t.Name)
-            .Select(t => t.Name)
-            .ToListAsync(cancellationToken);
+        var response = await _pokemonService.GetTypesAsync(
+            cancellationToken);
 
-        return Ok(types);
+        return Ok(response);
     }
 
     [HttpGet("{pokeApiId:int}")]
@@ -128,23 +67,16 @@ public class PokemonController : ControllerBase
             return PokemonDataNotReady();
         }
 
-        var pokemon = await _dbContext.Pokemons
-            .AsNoTracking()
-            .Include(p => p.PokemonTypes)
-            .ThenInclude(pt => pt.PokemonType)
-            .FirstOrDefaultAsync(
-                p => p.PokeApiId == pokeApiId,
-                cancellationToken);
+        var result = await _pokemonService.GetByPokeApiIdAsync(
+            pokeApiId,
+            cancellationToken);
 
-        if (pokemon == null)
+        if (!result.Success)
         {
-            return NotFound(new
-            {
-                Message = $"Pokémon with PokeApiId {pokeApiId} was not found."
-            });
+            return ToActionResult(result);
         }
 
-        return Ok(MapToDetails(pokemon));
+        return Ok(result.Data);
     }
 
     private IActionResult PokemonDataNotReady()
@@ -156,84 +88,18 @@ public class PokemonController : ControllerBase
         });
     }
 
-    private static PokemonListItemResponse MapToListItem(Pokemon pokemon)
+    private IActionResult ToActionResult<T>(ServiceResult<T> result)
     {
-        return new PokemonListItemResponse
+        var error = new
         {
-            Id = pokemon.Id,
-            PokeApiId = pokemon.PokeApiId,
-            Name = pokemon.Name,
-            ImageUrl = pokemon.ImageUrl,
-            Height = pokemon.Height,
-            Weight = pokemon.Weight,
-            BaseExperience = pokemon.BaseExperience,
-            IsLegendary = pokemon.IsLegendary,
-            Types = pokemon.PokemonTypes
-                .Select(pt => pt.PokemonType.Name)
-                .OrderBy(name => name)
-                .ToList()
+            result.ErrorCode,
+            result.Message
         };
-    }
 
-    private static PokemonDetailsResponse MapToDetails(Pokemon pokemon)
-    {
-        return new PokemonDetailsResponse
+        return result.ErrorCode switch
         {
-            Id = pokemon.Id,
-            PokeApiId = pokemon.PokeApiId,
-            Name = pokemon.Name,
-            ImageUrl = pokemon.ImageUrl,
-            Height = pokemon.Height,
-            Weight = pokemon.Weight,
-            BaseExperience = pokemon.BaseExperience,
-            IsLegendary = pokemon.IsLegendary,
-            CreatedAt = pokemon.CreatedAt,
-            Types = pokemon.PokemonTypes
-                .Select(pt => pt.PokemonType.Name)
-                .OrderBy(name => name)
-                .ToList(),
-            Stats = ParseStats(pokemon.StatsJson),
-            Abilities = ParseAbilities(pokemon.AbilitiesJson)
+            "POKEMON_NOT_FOUND" => NotFound(error),
+            _ => BadRequest(error)
         };
-    }
-
-    private static List<PokemonStatResponse> ParseStats(string? statsJson)
-    {
-        if (string.IsNullOrWhiteSpace(statsJson))
-        {
-            return new List<PokemonStatResponse>();
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<PokemonStatResponse>>(
-                       statsJson,
-                       JsonOptions)
-                   ?? new List<PokemonStatResponse>();
-        }
-        catch
-        {
-            return new List<PokemonStatResponse>();
-        }
-    }
-
-    private static List<PokemonAbilityResponse> ParseAbilities(string? abilitiesJson)
-    {
-        if (string.IsNullOrWhiteSpace(abilitiesJson))
-        {
-            return new List<PokemonAbilityResponse>();
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<PokemonAbilityResponse>>(
-                       abilitiesJson,
-                       JsonOptions)
-                   ?? new List<PokemonAbilityResponse>();
-        }
-        catch
-        {
-            return new List<PokemonAbilityResponse>();
-        }
     }
 }

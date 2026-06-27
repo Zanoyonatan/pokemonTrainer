@@ -17,6 +17,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<PokemonPokemonType> PokemonPokemonTypes { get; set; }
 
+    public DbSet<DreamTeamPokemon> DreamTeamPokemons { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -44,5 +45,29 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(pt => pt.PokemonType)
             .WithMany(t => t.PokemonTypes)
             .HasForeignKey(pt => pt.PokemonTypeId);
+
+        builder.Entity<DreamTeamPokemon>()
+    .HasIndex(d => new { d.UserId, d.PokemonId })
+    .IsUnique();
+
+        builder.Entity<DreamTeamPokemon>()
+            .HasIndex(d => new { d.UserId, d.Slot })
+            .IsUnique();
+
+        builder.Entity<DreamTeamPokemon>()
+            .Property(d => d.Nickname)
+            .HasMaxLength(50);
+
+        builder.Entity<DreamTeamPokemon>()
+            .HasOne(d => d.User)
+            .WithMany()
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<DreamTeamPokemon>()
+            .HasOne(d => d.Pokemon)
+            .WithMany()
+            .HasForeignKey(d => d.PokemonId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
