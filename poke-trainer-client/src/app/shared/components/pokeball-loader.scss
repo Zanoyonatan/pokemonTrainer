@@ -1,0 +1,4 @@
+.loader-wrap { display: grid; place-items: center; gap: 16px; padding: 32px; color: var(--color-muted); font-weight: 700; }
+.pokeball { width: 92px; height: 92px; border-radius: 50%; background: linear-gradient(to bottom,#ef4444 0 48%,#172033 48% 52%,#fff 52% 100%); border: 7px solid #172033; position: relative; animation: spin3d 1.2s linear infinite; box-shadow: 0 20px 40px rgba(15,23,42,.18); }
+.pokeball::after { content: ''; position: absolute; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 6px solid #172033; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+@keyframes spin3d { from { transform: rotateY(0deg) rotateZ(0deg); } to { transform: rotateY(360deg) rotateZ(360deg); } }
