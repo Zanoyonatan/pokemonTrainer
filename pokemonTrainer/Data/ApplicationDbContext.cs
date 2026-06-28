@@ -28,7 +28,34 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .IsUnique();
 
         builder.Entity<Pokemon>()
-            .HasIndex(p => p.Name);
+           .HasIndex(p => p.Name);
+
+        builder.Entity<Pokemon>()
+        .HasIndex(p => p.Hp);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.Attack);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.Defense);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.SpecialAttack);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.SpecialDefense);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.Speed);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.Height);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.Weight);
+
+        builder.Entity<Pokemon>()
+            .HasIndex(p => p.BaseExperience);
 
         builder.Entity<PokemonType>()
             .HasIndex(t => t.Name)
