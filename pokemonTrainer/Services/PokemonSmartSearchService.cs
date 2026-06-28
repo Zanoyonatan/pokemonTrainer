@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 using pokemonTrainer.DTOs.AiSearch;
 using pokemonTrainer.Services.Ai;
 
@@ -75,7 +76,10 @@ public class PokemonSmartSearchService
         "special",
         "experienced",
         "experience",
-        "xp"
+        "xp",
+        "top",
+        "first",
+        "best"
     };
 
     private readonly PokemonService _pokemonService;
@@ -122,6 +126,10 @@ public class PokemonSmartSearchService
     {
         try
         {
+            _logger.LogInformation(
+                "Trying to parse Pokémon smart search query with Gemini. Query: {Query}",
+                query);
+
             var prompt = BuildGeminiPrompt(query);
 
             var json = await _geminiService.GenerateJsonAsync(
@@ -130,6 +138,10 @@ public class PokemonSmartSearchService
 
             if (string.IsNullOrWhiteSpace(json))
             {
+                _logger.LogWarning(
+                    "Gemini returned empty response. Falling back to rule-based parser. Query: {Query}",
+                    query);
+
                 return null;
             }
 
@@ -142,6 +154,10 @@ public class PokemonSmartSearchService
 
             if (criteria == null)
             {
+                _logger.LogWarning(
+                    "Gemini response could not be deserialized into search criteria. Raw response: {RawResponse}",
+                    cleanedJson);
+
                 return null;
             }
 
@@ -181,7 +197,7 @@ Allowed Pokémon types:
 normal, fire, water, electric, grass, ice, fighting, poison, ground, flying, psychic, bug, rock, ghost, dragon, dark, steel, fairy
 
 Allowed sortBy values:
-hp, attack, defense, specialAttack, specialDefense, speed, height, weight, baseExperience, null
+hp, attack, defense, specialAttack, specialDefense, speed, height, weight, baseExperience, totalStats, null
 
 sortDirection must be:
 asc or desc
@@ -194,6 +210,8 @@ Use these interpretations:
 - special attacker => sortBy specialAttack desc
 - special defense => sortBy specialDefense desc
 - experienced, xp => sortBy baseExperience desc
+- top N, first N, best N => requestedCount N
+- if the query says top or best and no specific stat is requested, use sortBy totalStats desc
 - small, short, tiny => maxHeight 10
 - large, big, tall => minHeight 20
 - light => maxWeight 200
@@ -212,6 +230,7 @@ Schema:
   "maxHeight": number or null,
   "minWeight": number or null,
   "maxWeight": number or null,
+  "requestedCount": number or null,
   "detectedIntents": ["string"]
 }
 
@@ -264,13 +283,22 @@ User query:
             "speed",
             "height",
             "weight",
-            "baseExperience"
+            "baseExperience",
+            "totalStats"
         };
 
         if (!string.IsNullOrWhiteSpace(criteria.SortBy) &&
             !allowedSortBy.Contains(criteria.SortBy))
         {
             criteria.SortBy = null;
+        }
+
+        if (criteria.RequestedCount.HasValue)
+        {
+            criteria.RequestedCount = Math.Clamp(
+                criteria.RequestedCount.Value,
+                1,
+                100);
         }
 
         if (!criteria.SortDirection.Equals(
@@ -306,6 +334,7 @@ User query:
         DetectHeightIntent(normalizedQuery, criteria);
         DetectWeightIntent(normalizedQuery, criteria);
         DetectStatIntent(normalizedQuery, criteria);
+        DetectRequestedCount(normalizedQuery, criteria);
         DetectNameSearch(words, criteria);
 
         if (criteria.DetectedIntents.Count == 0)
@@ -429,6 +458,36 @@ User query:
         }
     }
 
+    private static void DetectRequestedCount(
+        string normalizedQuery,
+        PokemonSmartSearchCriteria criteria)
+    {
+        var match = Regex.Match(
+            normalizedQuery,
+            @"\b(?:top|first|best)\s+(\d{1,2})\b",
+            RegexOptions.IgnoreCase);
+
+        if (!match.Success)
+        {
+            return;
+        }
+
+        if (!int.TryParse(match.Groups[1].Value, out var count))
+        {
+            return;
+        }
+
+        criteria.RequestedCount = Math.Clamp(count, 1, 100);
+        criteria.DetectedIntents.Add($"requestedCount:{criteria.RequestedCount}");
+
+        if (string.IsNullOrWhiteSpace(criteria.SortBy))
+        {
+            criteria.SortBy = "totalStats";
+            criteria.SortDirection = "desc";
+            criteria.DetectedIntents.Add("sort:totalStats");
+        }
+    }
+
     private static void DetectNameSearch(
         List<string> words,
         PokemonSmartSearchCriteria criteria)
@@ -437,6 +496,7 @@ User query:
             .Where(word => !KnownTypes.Contains(word))
             .Where(word => !StopWords.Contains(word))
             .Where(word => !IntentWords.Contains(word))
+            .Where(word => !int.TryParse(word, out _))
             .ToList();
 
         if (possibleNameWords.Count == 0)
@@ -485,6 +545,11 @@ User query:
         if (!string.IsNullOrWhiteSpace(criteria.SortBy))
         {
             parts.Add($"sorted by '{criteria.SortBy}'");
+        }
+
+        if (criteria.RequestedCount.HasValue)
+        {
+            parts.Add($"limited to top {criteria.RequestedCount.Value}");
         }
 
         var interpretedAs = parts.Count == 0

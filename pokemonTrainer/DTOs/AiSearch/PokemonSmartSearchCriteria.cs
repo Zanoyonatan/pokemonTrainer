@@ -20,5 +20,7 @@ public class PokemonSmartSearchCriteria
 
     public int? MaxWeight { get; set; }
 
+    public int? RequestedCount { get; set; }
+
     public List<string> DetectedIntents { get; set; } = new();
 }

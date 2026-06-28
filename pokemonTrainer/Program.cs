@@ -90,7 +90,7 @@ namespace pokemonTrainer
             builder.Services.AddHttpClient<GeminiTextGenerationService>(client =>
             {
                 client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
-                client.Timeout = TimeSpan.FromSeconds(20);
+                client.Timeout = TimeSpan.FromSeconds(90);
             });
             var app = builder.Build();
 
