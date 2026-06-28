@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pokemonTrainer.DTOs.Common;
 using pokemonTrainer.DTOs.DreamTeam;
+using pokemonTrainer.DTOs.DreamTeamAnalysis;
 using pokemonTrainer.Services;
 
 namespace pokemonTrainer.Controllers;
@@ -13,13 +14,16 @@ namespace pokemonTrainer.Controllers;
 public class DreamTeamController : ControllerBase
 {
     private readonly DreamTeamService _dreamTeamService;
+    private readonly DreamTeamAnalysisService _dreamTeamAnalysisService;
     private readonly PokemonImportStatusService _statusService;
 
     public DreamTeamController(
         DreamTeamService dreamTeamService,
+        DreamTeamAnalysisService dreamTeamAnalysisService,
         PokemonImportStatusService statusService)
     {
         _dreamTeamService = dreamTeamService;
+        _dreamTeamAnalysisService = dreamTeamAnalysisService;
         _statusService = statusService;
     }
 
@@ -40,6 +44,29 @@ public class DreamTeamController : ControllerBase
         }
 
         var response = await _dreamTeamService.GetMyTeamAsync(
+            userId,
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpGet("analyze")]
+    public async Task<IActionResult> Analyze(
+        CancellationToken cancellationToken = default)
+    {
+        if (!_statusService.IsReady)
+        {
+            return PokemonDataNotReady();
+        }
+
+        var userId = GetCurrentUserId();
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var response = await _dreamTeamAnalysisService.AnalyzeAsync(
             userId,
             cancellationToken);
 

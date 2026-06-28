@@ -9,6 +9,7 @@ using pokemonTrainer.Infrastructure;
 using pokemonTrainer.Workers;
 using pokemonTrainer.Options;
 using pokemonTrainer.Services.Ai;
+using pokemonTrainer.Middleware;
 namespace pokemonTrainer
 {
     public class Program
@@ -81,7 +82,9 @@ namespace pokemonTrainer
             builder.Services.AddScoped<PokemonImportService>();
             builder.Services.AddHostedService<PokemonStartupImportWorker>();
             builder.Services.AddScoped<DreamTeamService>();
+            builder.Services.AddScoped<DreamTeamAnalysisService>();
             builder.Services.AddScoped<PokemonService>();
+            builder.Services.AddScoped<PokemonNicknameService>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<PokemonSmartSearchService>();
             builder.Services.Configure<GeminiOptions>(
@@ -101,7 +104,7 @@ namespace pokemonTrainer
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();

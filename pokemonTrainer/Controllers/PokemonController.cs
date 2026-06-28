@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using pokemonTrainer.DTOs.Common;
+using pokemonTrainer.DTOs.Nicknames;
 using pokemonTrainer.Services;
 
 namespace pokemonTrainer.Controllers;
@@ -12,13 +13,16 @@ using Microsoft.AspNetCore.Authorization;
 public class PokemonController : ControllerBase
 {
     private readonly PokemonService _pokemonService;
+    private readonly PokemonNicknameService _nicknameService;
     private readonly PokemonImportStatusService _statusService;
 
     public PokemonController(
         PokemonService pokemonService,
+        PokemonNicknameService nicknameService,
         PokemonImportStatusService statusService)
     {
         _pokemonService = pokemonService;
+        _nicknameService = nicknameService;
         _statusService = statusService;
     }
 
@@ -72,6 +76,30 @@ public class PokemonController : ControllerBase
 
         var result = await _pokemonService.GetByPokeApiIdAsync(
             pokeApiId,
+            cancellationToken);
+
+        if (!result.Success)
+        {
+            return ToActionResult(result);
+        }
+
+        return Ok(result.Data);
+    }
+
+    [HttpPost("{pokeApiId:int}/generate-nicknames")]
+    public async Task<IActionResult> GenerateNicknames(
+        int pokeApiId,
+        GeneratePokemonNicknamesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_statusService.IsReady)
+        {
+            return PokemonDataNotReady();
+        }
+
+        var result = await _nicknameService.GenerateAsync(
+            pokeApiId,
+            request.Count,
             cancellationToken);
 
         if (!result.Success)
