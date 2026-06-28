@@ -1,1 +1,29 @@
-.error-state { display: grid; place-items: center; gap: 12px; padding: 42px; text-align: center; border-radius: var(--radius-lg); background: #fff7f7; border: 1px solid rgba(239,68,68,.18); } .icon { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px; background: var(--color-danger-soft); font-size: 28px; } h2,p { margin: 0; } p { color: var(--color-muted); }
+.error-state {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 42px;
+  text-align: center;
+  border-radius: var(--radius-lg);
+  background: #fff7f7;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: var(--color-danger-soft);
+  font-size: 28px;
+}
+
+h2 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+  color: var(--color-muted);
+}

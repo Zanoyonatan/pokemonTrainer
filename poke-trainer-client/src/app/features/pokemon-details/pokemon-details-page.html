@@ -1,1 +1,54 @@
-<section class="page-card details-layout"><div class="visual"><div class="pokemon-shadow">?</div></div><div><p class="eyebrow">Details</p><h1 class="page-title">Pokémon Details</h1><p class="page-description">Single Pokémon details, stats, abilities, image fallback and add-to-team action will be implemented here.</p></div></section>
+@if (isLoading()) {
+  <app-pokeball-loader text="Loading Pokémon details..." />
+} @else if (errorMessage(); as message) {
+  <app-error-state title="Details unavailable" [message]="message" (retry)="load()" />
+} @else if (pokemon(); as p) {
+  <section class="page-card details-layout">
+    <div class="visual">
+      <img [src]="p.imageUrl || fallbackImage" [alt]="p.name" (error)="onImageError($event)" />
+    </div>
+
+    <div>
+      <p class="eyebrow">Details</p>
+      <h1 class="page-title">{{ p.name }}</h1>
+
+      <div class="types">
+        @for (type of p.types; track type) {
+          <app-type-badge [type]="type" />
+        }
+      </div>
+
+      <p class="page-description">
+        {{ p.description || 'No description is available yet for this Pokémon.' }}
+      </p>
+
+      @if (successMessage(); as message) {
+        <div class="inline-success">{{ message }}</div>
+      }
+
+      <div class="stats-grid">
+        <div><span>HP</span><strong>{{ p.hp ?? '-' }}</strong></div>
+        <div><span>Attack</span><strong>{{ p.attack ?? '-' }}</strong></div>
+        <div><span>Defense</span><strong>{{ p.defense ?? '-' }}</strong></div>
+        <div><span>Speed</span><strong>{{ p.speed ?? '-' }}</strong></div>
+        <div><span>Height</span><strong>{{ p.height ?? '-' }}</strong></div>
+        <div><span>Weight</span><strong>{{ p.weight ?? '-' }}</strong></div>
+      </div>
+
+      @if (p.abilities?.length) {
+        <div class="abilities">
+          <h2>Abilities</h2>
+          <div>
+            @for (ability of p.abilities; track ability) {
+              <span>{{ ability }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <button class="primary-button" type="button" (click)="addToTeam()">
+        Add to Dream Team
+      </button>
+    </div>
+  </section>
+}

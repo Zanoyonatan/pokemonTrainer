@@ -15,15 +15,18 @@ public class PokemonImportService
 
     private readonly ApplicationDbContext _dbContext;
     private readonly PokeApiClient _pokeApiClient;
+    private readonly PokemonCatalogCacheService _cacheService;
     private readonly ILogger<PokemonImportService> _logger;
 
     public PokemonImportService(
         ApplicationDbContext dbContext,
         PokeApiClient pokeApiClient,
+        PokemonCatalogCacheService cacheService,
         ILogger<PokemonImportService> logger)
     {
         _dbContext = dbContext;
         _pokeApiClient = pokeApiClient;
+        _cacheService = cacheService;
         _logger = logger;
     }
 
@@ -55,6 +58,10 @@ public class PokemonImportService
                 result,
                 cancellationToken);
 
+            await _cacheService.RefreshIfCountChangedAsync(
+                expectedDatabaseCount: result.LocalCountAfter,
+                cancellationToken);
+
             _logger.LogInformation(
                 "Local Pokémon count matches remote count. Import skipped. Count: {Count}",
                 remoteCount);
@@ -62,8 +69,9 @@ public class PokemonImportService
             return result;
         }
 
-        var remoteReferences =
-            await LoadRemotePokemonReferencesAsync(maxCount, cancellationToken);
+        var remoteReferences = await LoadRemotePokemonReferencesAsync(
+            maxCount,
+            cancellationToken);
 
         result.RemoteCount = remoteReferences.RemoteCount;
         result.Checked = remoteReferences.Items.Count;
@@ -98,7 +106,12 @@ public class PokemonImportService
                 result,
                 cancellationToken);
 
-            _logger.LogInformation("No missing Pokémon found. Import skipped.");
+            await _cacheService.RefreshIfCountChangedAsync(
+                expectedDatabaseCount: result.LocalCountAfter,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "No missing Pokémon found. Import skipped.");
 
             return result;
         }
@@ -127,7 +140,9 @@ public class PokemonImportService
                 if (details == null)
                 {
                     result.Failed++;
-                    result.Errors.Add($"Failed to load details for Pokémon ID {reference.PokeApiId}.");
+                    result.Errors.Add(
+                        $"Failed to load details for Pokémon ID {reference.PokeApiId}.");
+
                     continue;
                 }
 
@@ -170,6 +185,7 @@ public class PokemonImportService
                 if (processedSinceLastSave >= SaveBatchSize)
                 {
                     await _dbContext.SaveChangesAsync(cancellationToken);
+
                     processedSinceLastSave = 0;
 
                     _logger.LogInformation(
@@ -186,7 +202,10 @@ public class PokemonImportService
                     $"Failed to import Pokémon ID {reference.PokeApiId} ({reference.Name}): {ex.Message}";
 
                 result.Errors.Add(error);
-                _logger.LogError(ex, error);
+
+                _logger.LogError(
+                    ex,
+                    error);
             }
         }
 
@@ -204,6 +223,13 @@ public class PokemonImportService
             result,
             cancellationToken);
 
+        if (result.LocalCountAfter > 0)
+        {
+            await _cacheService.RefreshIfCountChangedAsync(
+                expectedDatabaseCount: result.LocalCountAfter,
+                cancellationToken);
+        }
+
         _logger.LogInformation(
             "Pokémon import completed. Created: {Created}, Skipped: {Skipped}, Failed: {Failed}, IsComplete: {IsComplete}",
             result.Created,
@@ -215,8 +241,8 @@ public class PokemonImportService
     }
 
     private async Task UpdateCatalogStateIfCompleteAsync(
-    PokemonImportResult result,
-    CancellationToken cancellationToken)
+        PokemonImportResult result,
+        CancellationToken cancellationToken)
     {
         if (!result.IsComplete)
         {
@@ -241,6 +267,7 @@ public class PokemonImportService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
     private async Task<int> GetRemotePokemonCountAsync(
         CancellationToken cancellationToken)
     {
@@ -251,7 +278,8 @@ public class PokemonImportService
 
         if (firstPage == null)
         {
-            throw new InvalidOperationException("Failed to load Pokémon count from PokeAPI.");
+            throw new InvalidOperationException(
+                "Failed to load Pokémon count from PokeAPI.");
         }
 
         return firstPage.Count;
@@ -272,7 +300,8 @@ public class PokemonImportService
 
         if (firstPage == null)
         {
-            throw new InvalidOperationException("Failed to load Pokémon list from PokeAPI.");
+            throw new InvalidOperationException(
+                "Failed to load Pokémon list from PokeAPI.");
         }
 
         var remoteCount = firstPage.Count;
@@ -283,7 +312,9 @@ public class PokemonImportService
 
         var items = new List<RemotePokemonReference>();
 
-        AddReferencesFromPage(firstPage, items);
+        AddReferencesFromPage(
+            firstPage,
+            items);
 
         var offset = items.Count;
 
@@ -305,7 +336,9 @@ public class PokemonImportService
                     $"Failed to load Pokémon list page at offset {offset}.");
             }
 
-            AddReferencesFromPage(page, items);
+            AddReferencesFromPage(
+                page,
+                items);
 
             offset += limit;
         }
@@ -343,7 +376,8 @@ public class PokemonImportService
         }
     }
 
-    private static int? ExtractIdFromUrl(string url)
+    private static int? ExtractIdFromUrl(
+        string url)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
@@ -354,7 +388,8 @@ public class PokemonImportService
 
         var lastSlashIndex = trimmedUrl.LastIndexOf('/');
 
-        if (lastSlashIndex < 0 || lastSlashIndex == trimmedUrl.Length - 1)
+        if (lastSlashIndex < 0 ||
+            lastSlashIndex == trimmedUrl.Length - 1)
         {
             return null;
         }
@@ -365,9 +400,10 @@ public class PokemonImportService
             ? id
             : null;
     }
+
     private static int GetBaseStat(
-    PokeApiPokemonDetails details,
-    string statName)
+        PokeApiPokemonDetails details,
+        string statName)
     {
         return details.Stats
             .FirstOrDefault(s =>
@@ -376,7 +412,9 @@ public class PokemonImportService
                     StringComparison.OrdinalIgnoreCase))
             ?.BaseStat ?? 0;
     }
-    private static Pokemon CreatePokemon(PokeApiPokemonDetails details)
+
+    private static Pokemon CreatePokemon(
+        PokeApiPokemonDetails details)
     {
         var imageUrl =
             details.Sprites.Other?.OfficialArtwork?.FrontDefault
@@ -419,6 +457,7 @@ public class PokemonImportService
             IsLegendary = false
         };
     }
+
     private class RemotePokemonReferencesResult
     {
         public int RemoteCount { get; set; }

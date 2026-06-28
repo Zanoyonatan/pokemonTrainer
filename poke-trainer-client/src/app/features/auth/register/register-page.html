@@ -1,1 +1,61 @@
-<section class="auth-page"><div class="auth-card"><div class="brand-mark">🧢</div><p class="eyebrow">New Trainer</p><h1>Create Trainer Account</h1><p class="page-description">Registration will be connected to the backend Auth endpoint in the Auth stage.</p><div class="actions"><a class="primary-button" routerLink="/app/dashboard">Temporary create account</a><a class="secondary-button" routerLink="/login">Back to login</a></div></div></section>
+<section class="auth-page">
+  <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="brand-mark">PT</div>
+
+    <p class="eyebrow">New Trainer</p>
+    <h1>Create Trainer Account</h1>
+    <p class="page-description">
+      Register to start building your personal Dream Team.
+    </p>
+
+    @if (errorMessage(); as message) {
+      <div class="inline-error">{{ message }}</div>
+    }
+
+    @if (isLoading()) {
+      <app-pokeball-loader text="Creating trainer account..." />
+    } @else {
+      <div class="form-field">
+        <label for="displayName">Trainer name</label>
+        <input id="displayName" type="text" formControlName="displayName" autocomplete="name" />
+
+        @if (form.controls.displayName.touched && form.controls.displayName.invalid) {
+          <span class="field-error">Trainer name is required.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" autocomplete="email" />
+
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <span class="field-error">Valid email is required.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <span class="field-error">Password must contain at least 6 characters.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="confirmPassword">Confirm password</label>
+        <input id="confirmPassword" type="password" formControlName="confirmPassword" autocomplete="new-password" />
+
+        @if (form.controls.confirmPassword.touched && passwordsMismatch) {
+          <span class="field-error">Passwords do not match.</span>
+        }
+      </div>
+
+      <button class="primary-button" type="submit">Register</button>
+
+      <a class="secondary-button" routerLink="/login">
+        Back to login
+      </a>
+    }
+  </form>
+</section>

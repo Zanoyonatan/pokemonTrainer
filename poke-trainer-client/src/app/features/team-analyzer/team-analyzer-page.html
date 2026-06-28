@@ -1,1 +1,62 @@
-<section class="page-card analyzer"><div><p class="eyebrow">AI Report</p><h1 class="page-title">Team Analyzer</h1><p class="page-description">This screen will analyze the Dream Team, explain strengths and weaknesses, and suggest improvements.</p><a class="primary-button" routerLink="/app/team">Manage Dream Team</a></div><aside class="report-preview"><h2>Trainer Report</h2><ul><li>Strengths will appear here.</li><li>Weaknesses will appear here.</li><li>AI recommendations will appear here.</li></ul></aside></section>
+<section class="page-card analyzer-page">
+  <div class="header-row">
+    <div>
+      <p class="eyebrow">AI Report</p>
+      <h1 class="page-title">Team Analyzer</h1>
+      <p class="page-description">
+        Analyze your Dream Team and get AI-powered strengths, weaknesses and recommendations.
+      </p>
+    </div>
+
+    <button class="primary-button" type="button" [disabled]="isLoading()" (click)="analyze()">
+      Analyze Again
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <app-pokeball-loader text="Analyzing your Dream Team..." />
+  } @else if (errorMessage(); as message) {
+    <app-error-state title="Analyzer unavailable" [message]="message" (retry)="analyze()" />
+  } @else if (analysis(); as report) {
+    <section class="report">
+      <div class="score-card">
+        <span>Team Score</span>
+        <strong>{{ report.score ?? '-' }}</strong>
+      </div>
+
+      <article>
+        <h2>Summary</h2>
+        <p>{{ report.summary }}</p>
+      </article>
+
+      <article>
+        <h2>Strengths</h2>
+        <ul>
+          @for (strength of report.strengths; track strength) {
+            <li>{{ strength }}</li>
+          }
+        </ul>
+      </article>
+
+      <article>
+        <h2>Weaknesses</h2>
+        <ul>
+          @for (weakness of report.weaknesses; track weakness) {
+            <li>{{ weakness }}</li>
+          }
+        </ul>
+      </article>
+
+      <article>
+        <h2>Recommendations</h2>
+        <ul>
+          @for (recommendation of recommendations(report); track recommendation) {
+            <li>{{ recommendation }}</li>
+          }
+        </ul>
+      </article>
+
+      <a class="secondary-button" routerLink="/app/catalog">Improve Team from Catalog</a>
+    </section>
+  }
+</section>

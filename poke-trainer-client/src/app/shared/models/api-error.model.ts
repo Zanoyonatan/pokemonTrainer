@@ -1,1 +1,7 @@
-export interface ApiError { status: number; message: string; code?: string; details?: string; }
+export interface ApiError {
+  status: number;
+  message: string;
+  code?: string;
+  details?: string;
+  traceId?: string;
+}

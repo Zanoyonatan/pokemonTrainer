@@ -1,1 +1,29 @@
-.empty-state { display: grid; place-items: center; gap: 12px; padding: 42px; text-align: center; border-radius: var(--radius-lg); background: rgba(255,255,255,.72); border: 1px dashed var(--color-border); } .icon { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px; background: var(--color-primary-soft); font-size: 28px; } h2,p { margin: 0; } p { color: var(--color-muted); }
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 42px;
+  text-align: center;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px dashed var(--color-border);
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: var(--color-primary-soft);
+  font-size: 28px;
+}
+
+h2 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+  color: var(--color-muted);
+}

@@ -1,1 +1,82 @@
-<section class="page-card"><p class="eyebrow">Team</p><h1 class="page-title">Dream Team</h1><p class="page-description">Your selected Pokémon will appear as 5 visual slots. Nicknames and AI suggestions will be added here.</p><div class="team-slots">@for (slot of slots; track slot) {<article class="team-slot card-hover"><div class="slot-index">Slot {{ slot }}</div><div class="empty-ball">+</div><strong>Empty slot</strong><small>Select a Pokémon from the Catalog or Smart Search.</small></article>}</div></section>
+<section class="page-card">
+  <p class="eyebrow">Team</p>
+  <h1 class="page-title">Dream Team</h1>
+  <p class="page-description">
+    Manage up to 5 Pokémon. Nicknames are saved in the database.
+  </p>
+
+  <div class="team-header">
+    <strong>{{ team().length }} / 5 selected</strong>
+    <a class="secondary-button" routerLink="/app/catalog">Add from Catalog</a>
+  </div>
+
+  @if (successMessage(); as message) {
+    <div class="inline-success">{{ message }}</div>
+  }
+
+  @if (errorMessage(); as message) {
+    <app-error-state title="Dream Team unavailable" [message]="message" (retry)="load()" />
+  } @else if (isLoading()) {
+    <app-pokeball-loader text="Loading your Dream Team..." />
+  } @else if (team().length === 0) {
+    <app-empty-state
+      title="Your Dream Team is empty"
+      message="Choose Pokémon from the Catalog or Smart Search to build your team."
+      actionText="Explore Catalog"
+    />
+  }
+
+  @if (!isLoading() && !errorMessage()) {
+    <div class="team-slots">
+      @for (item of team(); track item.id) {
+        <article class="team-slot selected card-hover">
+          <img [src]="item.imageUrl || fallbackImage" [alt]="item.pokemonName" (error)="onImageError($event)" />
+
+          <h2>{{ item.pokemonName }}</h2>
+
+          <div class="types">
+            @for (type of item.types; track type) {
+              <app-type-badge [type]="type" />
+            }
+          </div>
+
+          <div class="nickname-row">
+            <input #nicknameInput [value]="item.nickname || ''" placeholder="Nickname" />
+            <button class="secondary-button" type="button" (click)="saveNickname(item, nicknameInput.value)">Save</button>
+          </div>
+
+          @if (generatingNicknameFor() === item.id) {
+            <app-pokeball-loader text="Generating nicknames..." />
+          } @else {
+            <button class="ghost-button" type="button" (click)="generateNicknames(item)">
+              Generate nicknames
+            </button>
+          }
+
+          @if (nicknameSuggestions()[item.id]; as suggestions) {
+            <div class="suggestions">
+              @for (suggestion of suggestions; track suggestion) {
+                <button type="button" (click)="nicknameInput.value = suggestion">
+                  {{ suggestion }}
+                </button>
+              }
+            </div>
+          }
+
+          <div class="card-actions">
+            <a class="secondary-button" [routerLink]="['/app/pokemon', item.pokeApiId]">Details</a>
+            <button class="danger-button" type="button" (click)="remove(item)">Remove</button>
+          </div>
+        </article>
+      }
+
+      @for (slot of emptySlots(); track slot) {
+        <article class="team-slot empty">
+          <div class="empty-ball">+</div>
+          <strong>Empty slot</strong>
+          <small>Select a Pokémon from the Catalog or Smart Search.</small>
+        </article>
+      }
+    </div>
+  }
+</section>

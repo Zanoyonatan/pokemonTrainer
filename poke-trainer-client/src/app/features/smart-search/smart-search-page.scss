@@ -1,1 +1,65 @@
-.search-box{display:grid;gap:14px;margin-top:28px}textarea{width:100%;resize:vertical;border:1px solid var(--color-border);border-radius:22px;padding:18px;background:#f8fafc;color:var(--color-text)}.search-box .primary-button{justify-self:start}
+.search-box {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  padding: 18px;
+  background: #fff;
+  color: var(--color-text);
+  outline: none;
+}
+
+textarea:focus {
+  border-color: rgba(79, 70, 229, 0.6);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+.search-box .primary-button {
+  justify-self: start;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.chips button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-weight: 750;
+}
+
+.inline-success {
+  margin-top: 18px;
+}
+
+.result-summary {
+  margin-top: 26px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.result-summary p {
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}

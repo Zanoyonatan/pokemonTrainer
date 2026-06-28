@@ -1,1 +1,53 @@
-<section class="hero-card"><div><p class="eyebrow">Trainer Dashboard</p><h1>Build your ultimate Dream Team</h1><p class="description">Explore Pokémon, use AI Smart Search, manage your team and analyze its strengths.</p><div class="actions"><a class="primary-button" routerLink="/app/catalog">Explore Catalog</a><a class="secondary-button" routerLink="/app/smart-search">Try Smart Search</a></div></div><div class="pokeball" aria-hidden="true"></div></section>
+@if (isLoading()) {
+  <app-pokeball-loader text="Preparing your trainer dashboard..." />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    title="Dashboard unavailable"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else {
+  <section class="hero-card">
+    <div>
+      <p class="eyebrow">Trainer Dashboard</p>
+      <h1>
+        Welcome back@if (trainer(); as currentTrainer) {, {{ currentTrainer.displayName || currentTrainer.trainerName || currentTrainer.email }}}
+      </h1>
+
+      <p class="description">
+        Explore Pokémon, use AI Smart Search, manage your team and analyze its strengths.
+      </p>
+
+      <div class="actions">
+        <a class="primary-button" routerLink="/app/catalog">Explore Catalog</a>
+        <a class="secondary-button" routerLink="/app/smart-search">Try Smart Search</a>
+      </div>
+    </div>
+
+    <div class="team-summary">
+      <strong>{{ team().length }} / 5</strong>
+      <span>Dream Team slots selected</span>
+      <a routerLink="/app/team">Manage team</a>
+    </div>
+  </section>
+
+  <section class="quick-grid">
+    <a class="quick-card card-hover" routerLink="/app/catalog">
+      <span>📚</span>
+      <strong>Pokédex Catalog</strong>
+      <small>Browse all Pokémon imported by the server.</small>
+    </a>
+
+    <a class="quick-card card-hover" routerLink="/app/team">
+      <span>⭐</span>
+      <strong>Dream Team</strong>
+      <small>Manage up to 5 Pokémon and nicknames.</small>
+    </a>
+
+    <a class="quick-card card-hover" routerLink="/app/analyzer">
+      <span>🧠</span>
+      <strong>AI Analyzer</strong>
+      <small>Discover strengths and weaknesses.</small>
+    </a>
+  </section>
+}

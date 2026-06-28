@@ -31,7 +31,7 @@ namespace pokemonTrainer
             builder.Services.AddHttpClient<PokeApiClient>(client =>
             {
                 client.BaseAddress = new Uri("https://pokeapi.co/api/v2/");
-                client.Timeout = TimeSpan.FromSeconds(20);
+                client.Timeout = TimeSpan.FromSeconds(90);
             });
 
 
@@ -98,6 +98,20 @@ namespace pokemonTrainer
                 client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
                 client.Timeout = TimeSpan.FromSeconds(90);
             });
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AngularClient", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:4200",
+                            "https://localhost:4200"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -109,6 +123,7 @@ namespace pokemonTrainer
             }
             app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
             app.UseHttpsRedirection();
+            app.UseCors("AngularClient");
             app.UseAuthentication();
             app.UseAuthorization();
 

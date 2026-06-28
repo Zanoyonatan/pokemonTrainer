@@ -1,0 +1,48 @@
+<article class="pokemon-card card-hover">
+  <div class="image-wrap">
+   <img
+  [src]="pokemon.imageUrl || fallbackImage"
+  [alt]="pokemon.name"
+  loading="lazy"
+  decoding="async"
+  width="140"
+  height="140"
+  (error)="onImageError($event)"
+/>
+  </div>
+
+  <div class="content">
+    <div class="title-row">
+      <h3>{{ pokemon.name }}</h3>
+      <span class="id">#{{ pokemon.pokeApiId }}</span>
+    </div>
+
+    <div class="types">
+      @for (type of pokemon.types; track type) {
+        <app-type-badge [type]="type" />
+      }
+    </div>
+
+    <dl class="stats">
+      <div><dt>HP</dt><dd>{{ pokemon.hp ?? '-' }}</dd></div>
+      <div><dt>ATK</dt><dd>{{ pokemon.attack ?? '-' }}</dd></div>
+      <div><dt>DEF</dt><dd>{{ pokemon.defense ?? '-' }}</dd></div>
+      <div><dt>SPD</dt><dd>{{ pokemon.speed ?? '-' }}</dd></div>
+    </dl>
+
+    <div class="actions">
+      <a class="secondary-button" [routerLink]="['/app/pokemon', pokemon.pokeApiId]">
+        Details
+      </a>
+
+      <button
+        class="primary-button"
+        type="button"
+        [disabled]="isInTeam"
+        (click)="addToTeam.emit(pokemon)"
+      >
+        {{ isInTeam ? 'In Team' : 'Add' }}
+      </button>
+    </div>
+  </div>
+</article>

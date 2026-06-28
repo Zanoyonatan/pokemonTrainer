@@ -1,1 +1,65 @@
-<section class="page-card"><p class="eyebrow">Pokédex</p><h1 class="page-title">Pokémon Catalog</h1><p class="page-description">Catalog grid, filters, paging and Pokémon cards will be connected to the backend in the Catalog stage.</p><div class="preview-grid"><div class="preview-card card-hover"><div class="monster">⚡</div><strong>Fast electric attacker</strong><small>Smart filtering will appear here.</small></div><div class="preview-card card-hover"><div class="monster">🔥</div><strong>Strong fire Pokémon</strong><small>Cards will come from SQL Server through the API.</small></div><div class="preview-card card-hover"><div class="monster">🌿</div><strong>Balanced team pick</strong><small>Add-to-team actions will be enabled later.</small></div></div></section>
+<section class="page-card">
+  <p class="eyebrow">Pokédex</p>
+  <h1 class="page-title">Pokémon Catalog</h1>
+  <p class="page-description">
+    Browse Pokémon imported by the backend from PokeAPI into SQL Server.
+  </p>
+
+  <div class="toolbar">
+    <input [(ngModel)]="search" placeholder="Search Pokémon by name..." (keyup.enter)="applyFilters()" />
+
+    <select [(ngModel)]="type" (change)="applyFilters()">
+      <option value="">All types</option>
+      @for (pokemonType of types; track pokemonType) {
+        <option [value]="pokemonType">{{ pokemonType }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="sortBy" (change)="applyFilters()">
+      <option value="name">Name</option>
+      <option value="hp">HP</option>
+      <option value="attack">Attack</option>
+      <option value="defense">Defense</option>
+      <option value="speed">Speed</option>
+    </select>
+
+    <button class="primary-button" type="button" (click)="applyFilters()">Search</button>
+  </div>
+
+  @if (successMessage(); as message) {
+    <div class="inline-success">{{ message }}</div>
+  }
+
+  @if (errorMessage(); as message) {
+    <app-error-state title="Catalog unavailable" [message]="message" (retry)="loadCatalog()" />
+  } @else if (isLoading()) {
+    <app-pokeball-loader text="Loading your Pokédex..." />
+  } @else if (pokemons().length === 0) {
+    <app-empty-state
+      title="No Pokémon found"
+      message="Try a different search, type or sort option."
+      actionText="Reset filters"
+      (actionClick)="search = ''; type = ''; sortBy = 'name'; applyFilters()"
+    />
+  } @else {
+    <div class="catalog-meta">
+      <span>{{ totalCount }} Pokémon found</span>
+      <span>Page {{ page }} / {{ totalPages }}</span>
+    </div>
+
+    <div class="catalog-grid">
+      @for (pokemon of pokemons(); track pokemon.pokeApiId) {
+        <app-pokemon-card
+          [pokemon]="pokemon"
+          [isInTeam]="isInTeam(pokemon)"
+          (addToTeam)="addToTeam($event)"
+        />
+      }
+    </div>
+
+    <div class="pagination">
+      <button class="secondary-button" type="button" [disabled]="page <= 1" (click)="previousPage()">Previous</button>
+      <button class="secondary-button" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
+    </div>
+  }
+</section>

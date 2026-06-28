@@ -1,5 +1,9 @@
 <header class="top-nav">
-  <a class="brand" routerLink="/app/dashboard"><span class="brand-icon">⚡</span><span>PokéTrainer AI</span></a>
+  <a class="brand" routerLink="/app/dashboard">
+    <span class="brand-icon">PT</span>
+    <span>PokéTrainer AI</span>
+  </a>
+
   <nav class="nav-links">
     <a routerLink="/app/dashboard" routerLinkActive="active">Dashboard</a>
     <a routerLink="/app/catalog" routerLinkActive="active">Catalog</a>
@@ -7,5 +11,16 @@
     <a routerLink="/app/team" routerLinkActive="active">Dream Team</a>
     <a routerLink="/app/analyzer" routerLinkActive="active">Analyzer</a>
   </nav>
-  <button class="logout-button" type="button">Logout</button>
+
+  <div class="trainer-area">
+    @if (trainer(); as currentTrainer) {
+      <span class="trainer-name">
+        {{ currentTrainer.displayName || currentTrainer.trainerName || currentTrainer.email }}
+      </span>
+    }
+
+    <button class="logout-button" type="button" (click)="logout()">
+      Logout
+    </button>
+  </div>
 </header>

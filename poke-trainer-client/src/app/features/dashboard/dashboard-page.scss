@@ -1,1 +1,104 @@
-.hero-card{display:grid;grid-template-columns:1.4fr .6fr;gap:32px;align-items:center;padding:44px;border-radius:32px;background:rgba(255,255,255,.9);box-shadow:var(--shadow-card);overflow:hidden}h1{margin:0;font-size:clamp(38px,5vw,66px);line-height:1}.description{max-width:620px;margin:20px 0 0;color:var(--color-muted);font-size:18px;line-height:1.6}.actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:28px}.pokeball{width:180px;height:180px;border-radius:50%;background:linear-gradient(to bottom,#ef4444 0 48%,#172033 48% 52%,#fff 52% 100%);border:10px solid #172033;position:relative;animation:spin 3.5s linear infinite;justify-self:center}.pokeball:after{content:'';position:absolute;width:52px;height:52px;border-radius:50%;background:#fff;border:9px solid #172033;top:50%;left:50%;transform:translate(-50%,-50%)}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:850px){.hero-card{grid-template-columns:1fr}}
+.hero-card {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 32px;
+  align-items: center;
+  padding: 44px;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(38px, 5vw, 66px);
+  line-height: 1;
+}
+
+.description {
+  max-width: 620px;
+  margin: 20px 0 0;
+  color: var(--color-muted);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.inline-warning,
+.inline-success {
+  margin-top: 22px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.team-summary {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 32px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at center, rgba(79, 70, 229, 0.16), transparent 62%),
+    #ffffff;
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
+.team-summary strong {
+  font-size: 64px;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.team-summary span {
+  color: var(--color-muted);
+  font-weight: 750;
+}
+
+.team-summary a {
+  color: var(--color-primary);
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.quick-card {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 24px;
+  background: white;
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+}
+
+.quick-card span {
+  font-size: 30px;
+}
+
+.quick-card strong {
+  font-size: 19px;
+}
+
+.quick-card small {
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+  .hero-card,
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+}

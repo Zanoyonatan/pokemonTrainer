@@ -1,1 +1,48 @@
-<section class="page-card"><p class="eyebrow">AI Search</p><h1 class="page-title">Smart Search</h1><p class="page-description">Ask naturally. The backend will use Gemini when available and rule-based fallback when needed.</p><div class="search-box"><textarea rows="5" placeholder="I want a fast electric Pokémon that is strong against water..." disabled></textarea><button class="primary-button" type="button" disabled>AI Trainer Search</button></div></section>
+<section class="page-card">
+  <p class="eyebrow">AI Search</p>
+  <h1 class="page-title">Smart Search</h1>
+  <p class="page-description">
+    Ask naturally. The backend uses Gemini when available and rule-based fallback when needed.
+  </p>
+
+  <div class="search-box">
+    <textarea rows="5" [(ngModel)]="query" placeholder="find me top 10 small electric pokemon"></textarea>
+
+    <button class="primary-button" type="button" [disabled]="isLoading()" (click)="search()">
+      AI Trainer Search
+    </button>
+  </div>
+
+  <div class="chips">
+    @for (prompt of prompts; track prompt) {
+      <button type="button" (click)="usePrompt(prompt)">
+        {{ prompt }}
+      </button>
+    }
+  </div>
+
+  @if (successMessage(); as message) {
+    <div class="inline-success">{{ message }}</div>
+  }
+
+  @if (isLoading()) {
+    <app-pokeball-loader text="AI Trainer is thinking..." />
+  } @else if (errorMessage(); as message) {
+    <app-error-state title="Smart Search unavailable" [message]="message" (retry)="search()" />
+  } @else if (result(); as searchResult) {
+    <div class="result-summary">
+      <strong>Source: {{ searchResult.source || 'smart-search' }}</strong>
+      <p>{{ searchResult.explanation || 'Smart Search returned matching Pokémon.' }}</p>
+    </div>
+
+    <div class="results-grid">
+      @for (pokemon of searchResult.items; track pokemon.pokeApiId) {
+        <app-pokemon-card
+          [pokemon]="pokemon"
+          [isInTeam]="isInTeam(pokemon)"
+          (addToTeam)="addToTeam($event)"
+        />
+      }
+    </div>
+  }
+</section>

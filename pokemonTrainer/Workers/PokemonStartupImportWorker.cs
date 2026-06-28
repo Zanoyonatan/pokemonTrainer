@@ -30,7 +30,13 @@ public class PokemonStartupImportWorker : BackgroundService
         var hasUsableLocalCatalog = await HasUsableLocalCatalogAsync(
             dbContext,
             stoppingToken);
+        if (hasUsableLocalCatalog)
+        {
+            var cacheService = scope.ServiceProvider
+                .GetRequiredService<PokemonCatalogCacheService>();
 
+            await cacheService.RefreshFromDatabaseAsync(stoppingToken);
+        }
         _statusService.MarkRunning(
             keepExistingDataAvailable: hasUsableLocalCatalog);
 
