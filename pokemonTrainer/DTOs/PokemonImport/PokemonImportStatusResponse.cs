@@ -13,6 +13,7 @@ public class PokemonImportStatusResponse
     public int RemoteCount { get; set; }
 
     public int LocalCountBefore { get; set; }
+    public int LocalCountAfter { get; set; }
 
     public int Checked { get; set; }
 
@@ -23,6 +24,9 @@ public class PokemonImportStatusResponse
     public int Skipped { get; set; }
 
     public int Failed { get; set; }
+
+    public bool IsComplete { get; set; }
+
 
     public string LastMessage { get; set; } = string.Empty;
 

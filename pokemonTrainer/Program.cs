@@ -7,6 +7,8 @@ using pokemonTrainer.Services;
 using System.Text;
 using pokemonTrainer.Infrastructure;
 using pokemonTrainer.Workers;
+using pokemonTrainer.Options;
+using pokemonTrainer.Services.Ai;
 namespace pokemonTrainer
 {
     public class Program
@@ -31,7 +33,7 @@ namespace pokemonTrainer
                 client.Timeout = TimeSpan.FromSeconds(20);
             });
 
-            
+
 
 
             builder.Services
@@ -49,7 +51,7 @@ namespace pokemonTrainer
 
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
-         
+
             var jwtSection = builder.Configuration.GetSection("Jwt");
 
             var jwtKey = jwtSection["Key"]
@@ -81,6 +83,15 @@ namespace pokemonTrainer
             builder.Services.AddScoped<DreamTeamService>();
             builder.Services.AddScoped<PokemonService>();
             builder.Services.AddScoped<AuthService>();
+            builder.Services.AddScoped<PokemonSmartSearchService>();
+            builder.Services.Configure<GeminiOptions>(
+            builder.Configuration.GetSection("Gemini"));
+
+            builder.Services.AddHttpClient<GeminiTextGenerationService>(client =>
+            {
+                client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
+                client.Timeout = TimeSpan.FromSeconds(20);
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

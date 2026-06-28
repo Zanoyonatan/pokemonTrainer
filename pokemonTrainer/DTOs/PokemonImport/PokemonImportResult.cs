@@ -5,6 +5,7 @@ public class PokemonImportResult
     public int RemoteCount { get; set; }
 
     public int LocalCountBefore { get; set; }
+    public int LocalCountAfter { get; set; }
 
     public int Checked { get; set; }
 
@@ -15,6 +16,7 @@ public class PokemonImportResult
     public int Skipped { get; set; }
 
     public int Failed { get; set; }
-
+    public bool IsComplete { get; set; }
     public List<string> Errors { get; set; } = new();
+
 }

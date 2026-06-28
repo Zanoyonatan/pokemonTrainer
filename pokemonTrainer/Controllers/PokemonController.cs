@@ -4,7 +4,10 @@ using pokemonTrainer.Services;
 
 namespace pokemonTrainer.Controllers;
 
+using Microsoft.AspNetCore.Authorization;
+
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class PokemonController : ControllerBase
 {

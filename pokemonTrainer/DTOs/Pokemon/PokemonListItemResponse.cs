@@ -15,7 +15,17 @@ public class PokemonListItemResponse
     public int Weight { get; set; }
 
     public int? BaseExperience { get; set; }
+    public int Hp { get; set; }
 
+    public int Attack { get; set; }
+
+    public int Defense { get; set; }
+
+    public int SpecialAttack { get; set; }
+
+    public int SpecialDefense { get; set; }
+
+    public int Speed { get; set; }
     public bool IsLegendary { get; set; }
 
     public List<string> Types { get; set; } = new();

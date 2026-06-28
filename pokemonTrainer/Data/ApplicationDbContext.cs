@@ -18,6 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PokemonPokemonType> PokemonPokemonTypes { get; set; }
 
     public DbSet<DreamTeamPokemon> DreamTeamPokemons { get; set; }
+    public DbSet<PokemonCatalogState> PokemonCatalogStates { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -69,5 +70,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(d => d.PokemonId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<PokemonCatalogState>()
+        .HasKey(s => s.Id);
     }
 }

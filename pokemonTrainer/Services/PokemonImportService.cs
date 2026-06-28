@@ -48,6 +48,12 @@ public class PokemonImportService
             result.Created = 0;
             result.Failed = 0;
             result.Skipped = remoteCount;
+            result.LocalCountAfter = localCountBefore;
+            result.IsComplete = true;
+
+            await UpdateCatalogStateIfCompleteAsync(
+                result,
+                cancellationToken);
 
             _logger.LogInformation(
                 "Local Pokémon count matches remote count. Import skipped. Count: {Count}",
@@ -80,7 +86,20 @@ public class PokemonImportService
 
         if (missingReferences.Count == 0)
         {
+            result.LocalCountAfter = await _dbContext.Pokemons
+                .CountAsync(cancellationToken);
+
+            result.IsComplete =
+                !maxCount.HasValue &&
+                result.Failed == 0 &&
+                result.LocalCountAfter >= result.RemoteCount;
+
+            await UpdateCatalogStateIfCompleteAsync(
+                result,
+                cancellationToken);
+
             _logger.LogInformation("No missing Pokémon found. Import skipped.");
+
             return result;
         }
 
@@ -173,15 +192,55 @@ public class PokemonImportService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        result.LocalCountAfter = await _dbContext.Pokemons
+            .CountAsync(cancellationToken);
+
+        result.IsComplete =
+            !maxCount.HasValue &&
+            result.Failed == 0 &&
+            result.LocalCountAfter >= result.RemoteCount;
+
+        await UpdateCatalogStateIfCompleteAsync(
+            result,
+            cancellationToken);
+
         _logger.LogInformation(
-            "Pokémon import completed. Created: {Created}, Skipped: {Skipped}, Failed: {Failed}",
+            "Pokémon import completed. Created: {Created}, Skipped: {Skipped}, Failed: {Failed}, IsComplete: {IsComplete}",
             result.Created,
             result.Skipped,
-            result.Failed);
+            result.Failed,
+            result.IsComplete);
 
         return result;
     }
 
+    private async Task UpdateCatalogStateIfCompleteAsync(
+    PokemonImportResult result,
+    CancellationToken cancellationToken)
+    {
+        if (!result.IsComplete)
+        {
+            return;
+        }
+
+        var state = await _dbContext.PokemonCatalogStates
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (state == null)
+        {
+            state = new PokemonCatalogState();
+
+            _dbContext.PokemonCatalogStates.Add(state);
+        }
+
+        state.LastKnownRemoteCount = result.RemoteCount;
+        state.LocalCountAtLastSuccessfulImport = result.LocalCountAfter;
+        state.IsComplete = true;
+        state.LastSuccessfulImportAtUtc = DateTime.UtcNow;
+        state.LastUpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
     private async Task<int> GetRemotePokemonCountAsync(
         CancellationToken cancellationToken)
     {
@@ -306,7 +365,17 @@ public class PokemonImportService
             ? id
             : null;
     }
-
+    private static int GetBaseStat(
+    PokeApiPokemonDetails details,
+    string statName)
+    {
+        return details.Stats
+            .FirstOrDefault(s =>
+                s.Stat.Name.Equals(
+                    statName,
+                    StringComparison.OrdinalIgnoreCase))
+            ?.BaseStat ?? 0;
+    }
     private static Pokemon CreatePokemon(PokeApiPokemonDetails details)
     {
         var imageUrl =
@@ -337,12 +406,19 @@ public class PokemonImportService
             Height = details.Height,
             Weight = details.Weight,
             BaseExperience = details.BaseExperience,
+
+            Hp = GetBaseStat(details, "hp"),
+            Attack = GetBaseStat(details, "attack"),
+            Defense = GetBaseStat(details, "defense"),
+            SpecialAttack = GetBaseStat(details, "special-attack"),
+            SpecialDefense = GetBaseStat(details, "special-defense"),
+            Speed = GetBaseStat(details, "speed"),
+
             StatsJson = statsJson,
             AbilitiesJson = abilitiesJson,
             IsLegendary = false
         };
     }
-
     private class RemotePokemonReferencesResult
     {
         public int RemoteCount { get; set; }

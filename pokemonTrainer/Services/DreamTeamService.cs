@@ -189,6 +189,14 @@ public class DreamTeamService
             Height = pokemon.Height,
             Weight = pokemon.Weight,
             BaseExperience = pokemon.BaseExperience,
+
+            Hp = pokemon.Hp,
+            Attack = pokemon.Attack,
+            Defense = pokemon.Defense,
+            SpecialAttack = pokemon.SpecialAttack,
+            SpecialDefense = pokemon.SpecialDefense,
+            Speed = pokemon.Speed,
+
             IsLegendary = pokemon.IsLegendary,
 
             Types = pokemon.PokemonTypes

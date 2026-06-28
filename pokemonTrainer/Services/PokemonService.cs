@@ -4,6 +4,7 @@ using pokemonTrainer.Data;
 using pokemonTrainer.DTOs.Common;
 using pokemonTrainer.DTOs.Pokemon;
 using pokemonTrainer.Models;
+using pokemonTrainer.DTOs.AiSearch;
 
 namespace pokemonTrainer.Services;
 
@@ -144,6 +145,14 @@ public class PokemonService
             Height = pokemon.Height,
             Weight = pokemon.Weight,
             BaseExperience = pokemon.BaseExperience,
+
+            Hp = pokemon.Hp,
+            Attack = pokemon.Attack,
+            Defense = pokemon.Defense,
+            SpecialAttack = pokemon.SpecialAttack,
+            SpecialDefense = pokemon.SpecialDefense,
+            Speed = pokemon.Speed,
+
             IsLegendary = pokemon.IsLegendary,
             Types = pokemon.PokemonTypes
                 .Select(pt => pt.PokemonType.Name)
@@ -212,5 +221,120 @@ public class PokemonService
         {
             return new List<PokemonAbilityResponse>();
         }
+    }
+    private static IQueryable<Pokemon> ApplySizeFilters(
+    IQueryable<Pokemon> query,
+    PokemonSmartSearchCriteria criteria)
+    {
+        if (criteria.MinHeight.HasValue)
+        {
+            query = query.Where(p => p.Height >= criteria.MinHeight.Value);
+        }
+
+        if (criteria.MaxHeight.HasValue)
+        {
+            query = query.Where(p => p.Height <= criteria.MaxHeight.Value);
+        }
+
+        if (criteria.MinWeight.HasValue)
+        {
+            query = query.Where(p => p.Weight >= criteria.MinWeight.Value);
+        }
+
+        if (criteria.MaxWeight.HasValue)
+        {
+            query = query.Where(p => p.Weight <= criteria.MaxWeight.Value);
+        }
+
+        return query;
+    }
+
+    private static IQueryable<Pokemon> ApplySorting(
+        IQueryable<Pokemon> query,
+        PokemonSmartSearchCriteria criteria)
+    {
+        var descending =
+            criteria.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return criteria.SortBy?.ToLowerInvariant() switch
+        {
+            "hp" => descending
+                ? query.OrderByDescending(p => p.Hp)
+                : query.OrderBy(p => p.Hp),
+
+            "attack" => descending
+                ? query.OrderByDescending(p => p.Attack)
+                : query.OrderBy(p => p.Attack),
+
+            "defense" => descending
+                ? query.OrderByDescending(p => p.Defense)
+                : query.OrderBy(p => p.Defense),
+
+            "specialattack" => descending
+                ? query.OrderByDescending(p => p.SpecialAttack)
+                : query.OrderBy(p => p.SpecialAttack),
+
+            "specialdefense" => descending
+                ? query.OrderByDescending(p => p.SpecialDefense)
+                : query.OrderBy(p => p.SpecialDefense),
+
+            "speed" => descending
+                ? query.OrderByDescending(p => p.Speed)
+                : query.OrderBy(p => p.Speed),
+
+            "height" => descending
+                ? query.OrderByDescending(p => p.Height)
+                : query.OrderBy(p => p.Height),
+
+            "weight" => descending
+                ? query.OrderByDescending(p => p.Weight)
+                : query.OrderBy(p => p.Weight),
+
+            "baseexperience" => descending
+                ? query.OrderByDescending(p => p.BaseExperience)
+                : query.OrderBy(p => p.BaseExperience),
+
+            _ => query.OrderBy(p => p.PokeApiId)
+        };
+    }
+    public async Task<PokemonPagedResponse> SearchByCriteriaAsync(
+    PokemonSmartSearchCriteria criteria,
+    int page = 1,
+    int pageSize = 20,
+    CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = _dbContext.Pokemons
+            .AsNoTracking()
+            .AsQueryable();
+
+        query = ApplySearchFilter(query, criteria.NameSearch);
+        query = ApplyTypeFilter(query, criteria.Type);
+        query = ApplySizeFilters(query, criteria);
+        query = ApplySorting(query, criteria);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var pokemons = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(p => p.PokemonTypes)
+                .ThenInclude(pt => pt.PokemonType)
+            .ToListAsync(cancellationToken);
+
+        return new PokemonPagedResponse
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0
+                ? 0
+                : (int)Math.Ceiling(totalCount / (double)pageSize),
+            Items = pokemons
+                .Select(MapToListItem)
+                .ToList()
+        };
     }
 }
