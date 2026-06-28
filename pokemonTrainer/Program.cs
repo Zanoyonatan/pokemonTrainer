@@ -83,9 +83,6 @@ namespace pokemonTrainer
             builder.Services.AddHostedService<PokemonStartupImportWorker>();
             builder.Services.AddScoped<DreamTeamService>();
             builder.Services.AddScoped<DreamTeamAnalysisService>();
-            builder.Services.AddMemoryCache();
-            builder.Services.AddScoped<DatabaseAvailabilityService>();
-            builder.Services.AddScoped<PokemonCatalogCacheService>();
             builder.Services.AddScoped<PokemonService>();
             builder.Services.AddScoped<PokemonNicknameService>();
             builder.Services.AddScoped<AuthService>();

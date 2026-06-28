@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using pokemonTrainer.Data;
 using pokemonTrainer.DTOs.Common;
 using pokemonTrainer.DTOs.Nicknames;
-using pokemonTrainer.DTOs.Pokemon;
-using pokemonTrainer.Models;
 using pokemonTrainer.Services.Ai;
 
 namespace pokemonTrainer.Services;
@@ -12,7 +10,6 @@ namespace pokemonTrainer.Services;
 public class PokemonNicknameService
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly PokemonCatalogCacheService _cacheService;
     private readonly GeminiTextGenerationService _geminiService;
     private readonly ILogger<PokemonNicknameService> _logger;
 
@@ -35,12 +32,10 @@ public class PokemonNicknameService
 
     public PokemonNicknameService(
         ApplicationDbContext dbContext,
-        PokemonCatalogCacheService cacheService,
         GeminiTextGenerationService geminiService,
         ILogger<PokemonNicknameService> logger)
     {
         _dbContext = dbContext;
-        _cacheService = cacheService;
         _geminiService = geminiService;
         _logger = logger;
     }
@@ -50,103 +45,39 @@ public class PokemonNicknameService
         int count,
         CancellationToken cancellationToken = default)
     {
-        // Try to load from database first
-        try
+        // Load Pokémon from local DB
+        var pokemon = await _dbContext.Pokemons
+            .AsNoTracking()
+            .Include(p => p.PokemonTypes)
+                .ThenInclude(pt => pt.PokemonType)
+            .FirstOrDefaultAsync(
+                p => p.PokeApiId == pokeApiId,
+                cancellationToken);
+
+        if (pokemon == null)
         {
-            var pokemon = await _dbContext.Pokemons
-                .AsNoTracking()
-                .Include(p => p.PokemonTypes)
-                    .ThenInclude(pt => pt.PokemonType)
-                .FirstOrDefaultAsync(
-                    p => p.PokeApiId == pokeApiId,
-                    cancellationToken);
-
-            if (pokemon == null)
-            {
-                return ServiceResult<GeneratePokemonNicknamesResponse>.Fail(
-                    "POKEMON_NOT_FOUND",
-                    "Pokémon not found.");
-            }
-
-            return await GenerateForPokemonAsync(pokemon.Name, pokemon.PokemonTypes, count, cancellationToken);
+            return ServiceResult<GeneratePokemonNicknamesResponse>.Fail(
+                "POKEMON_NOT_FOUND",
+                "Pokémon not found.");
         }
-        catch (Exception ex) when (DatabaseAvailabilityService.IsDatabaseUnavailableException(ex))
-        {
-            // Fall back to cache
-            var cached = _cacheService.FindInCache(pokeApiId);
-            if (cached == null)
-            {
-                return ServiceResult<GeneratePokemonNicknamesResponse>.Fail(
-                    "POKEMON_NOT_FOUND",
-                    "Pokémon not found.");
-            }
 
-            return await GenerateForCacheItemAsync(cached, count, cancellationToken);
-        }
-    }
-
-    private async Task<ServiceResult<GeneratePokemonNicknamesResponse>> GenerateForPokemonAsync(
-        string pokemonName,
-        ICollection<PokemonPokemonType> pokemonTypes,
-        int count,
-        CancellationToken cancellationToken)
-    {
+        // Clamp count to 1-10
         count = Math.Clamp(count, 1, 10);
 
-        var types = pokemonTypes
+        var types = pokemon.PokemonTypes
             .Select(pt => pt.PokemonType.Name.ToLower())
             .ToList();
 
         var response = new GeneratePokemonNicknamesResponse
         {
-            PokeApiId = 0, // Will be set by caller
-            PokemonName = pokemonName,
+            PokeApiId = pokemon.PokeApiId,
+            PokemonName = pokemon.Name,
             Types = types
         };
 
         // Try Gemini first
         var aiSuggestions = await TryGenerateWithGeminiAsync(
-            pokemonName,
-            types,
-            count,
-            cancellationToken);
-
-        if (aiSuggestions != null)
-        {
-            response.Suggestions = aiSuggestions;
-            response.AiUsed = true;
-        }
-        else
-        {
-            // Fall back to deterministic suggestions
-            response.Suggestions = GetFallbackSuggestions(types, count);
-            response.AiUsed = false;
-        }
-
-        return ServiceResult<GeneratePokemonNicknamesResponse>.Ok(response);
-    }
-
-    private async Task<ServiceResult<GeneratePokemonNicknamesResponse>> GenerateForCacheItemAsync(
-        PokemonCatalogCacheItem cached,
-        int count,
-        CancellationToken cancellationToken)
-    {
-        count = Math.Clamp(count, 1, 10);
-
-        var types = cached.Types
-            .Select(t => t.ToLower())
-            .ToList();
-
-        var response = new GeneratePokemonNicknamesResponse
-        {
-            PokeApiId = cached.PokeApiId,
-            PokemonName = cached.Name,
-            Types = types
-        };
-
-        // Try Gemini first
-        var aiSuggestions = await TryGenerateWithGeminiAsync(
-            cached.Name,
+            pokemon.Name,
             types,
             count,
             cancellationToken);

@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Text.Json;
-using pokemonTrainer.Services;
 
 namespace pokemonTrainer.Middleware;
 
@@ -57,57 +56,26 @@ public class GlobalExceptionHandlingMiddleware
         }
 
         context.Response.Clear();
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
 
-        // Check if this is a database exception
-        if (IsDatabaseUnavailableException(exception))
+        var response = new
         {
-            context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-            context.Response.ContentType = "application/json";
+            ErrorCode = "INTERNAL_SERVER_ERROR",
+            Message = "An unexpected error occurred.",
+            TraceId = traceId,
+            Details = _environment.IsDevelopment()
+                ? exception.Message
+                : null
+        };
 
-            var response = new
+        var json = JsonSerializer.Serialize(
+            response,
+            new JsonSerializerOptions
             {
-                ErrorCode = "DATABASE_UNAVAILABLE",
-                Message = "The database is currently unavailable.",
-                TraceId = traceId
-            };
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
 
-            var json = JsonSerializer.Serialize(
-                response,
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-
-            await context.Response.WriteAsync(json);
-        }
-        else
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var response = new
-            {
-                ErrorCode = "INTERNAL_SERVER_ERROR",
-                Message = "An unexpected error occurred.",
-                TraceId = traceId,
-                Details = _environment.IsDevelopment()
-                    ? exception.Message
-                    : null
-            };
-
-            var json = JsonSerializer.Serialize(
-                response,
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-
-            await context.Response.WriteAsync(json);
-        }
-    }
-
-    private static bool IsDatabaseUnavailableException(Exception exception)
-    {
-        return DatabaseAvailabilityService.IsDatabaseUnavailableException(exception);
+        await context.Response.WriteAsync(json);
     }
 }

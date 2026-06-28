@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.RegularExpressions;
 using pokemonTrainer.DTOs.AiSearch;
-using pokemonTrainer.DTOs.Pokemon;
 using pokemonTrainer.Services.Ai;
 
 namespace pokemonTrainer.Services;
@@ -84,18 +83,15 @@ public class PokemonSmartSearchService
     };
 
     private readonly PokemonService _pokemonService;
-    private readonly PokemonCatalogCacheService _cacheService;
     private readonly GeminiTextGenerationService _geminiService;
     private readonly ILogger<PokemonSmartSearchService> _logger;
 
     public PokemonSmartSearchService(
         PokemonService pokemonService,
-        PokemonCatalogCacheService cacheService,
         GeminiTextGenerationService geminiService,
         ILogger<PokemonSmartSearchService> logger)
     {
         _pokemonService = pokemonService;
-        _cacheService = cacheService;
         _geminiService = geminiService;
         _logger = logger;
     }
@@ -110,139 +106,18 @@ public class PokemonSmartSearchService
                 cancellationToken)
             ?? ParseCriteriaByRules(request.Query);
 
-        try
+        var results = await _pokemonService.SearchByCriteriaAsync(
+            criteria,
+            request.Page,
+            request.PageSize,
+            cancellationToken);
+
+        return new PokemonSmartSearchResponse
         {
-            var results = await _pokemonService.SearchByCriteriaAsync(
-                criteria,
-                request.Page,
-                request.PageSize,
-                cancellationToken);
-
-            return new PokemonSmartSearchResponse
-            {
-                Criteria = criteria,
-                Results = results,
-                Explanation = BuildExplanation(criteria, results.TotalCount)
-            };
-        }
-        catch (Exception ex) when (DatabaseAvailabilityService.IsDatabaseUnavailableException(ex))
-        {
-            // Try cache fallback
-            var cachedCriteria = await ParseCriteriaByRulesAsync(request.Query);
-            var cachedResults = SearchCachedCatalog(cachedCriteria, request.Page, request.PageSize);
-
-            return new PokemonSmartSearchResponse
-            {
-                Criteria = cachedCriteria,
-                Results = cachedResults,
-                Explanation = BuildExplanation(cachedCriteria, cachedResults.TotalCount)
-            };
-        }
-    }
-
-    private PokemonPagedResponse SearchCachedCatalog(
-        PokemonSmartSearchCriteria criteria,
-        int page,
-        int pageSize)
-    {
-        var cached = _cacheService.GetCachedCatalog();
-        if (cached == null)
-        {
-            throw new InvalidOperationException(
-                "The database is currently unavailable and no cached Pokémon catalog is available.");
-        }
-
-        var filtered = cached.AsEnumerable();
-
-        // Apply search filter
-        if (!string.IsNullOrWhiteSpace(criteria.NameSearch))
-        {
-            var normalizedSearch = criteria.NameSearch.Trim().ToLowerInvariant();
-            filtered = filtered.Where(p =>
-                p.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase));
-        }
-
-        // Apply type filter
-        if (!string.IsNullOrWhiteSpace(criteria.Type))
-        {
-            var normalizedType = criteria.Type.Trim().ToLowerInvariant();
-            filtered = filtered.Where(p =>
-                p.Types.Any(t => t.Equals(normalizedType, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        // Apply size filters
-        if (criteria.MinHeight.HasValue)
-            filtered = filtered.Where(p => p.Height >= criteria.MinHeight.Value);
-        if (criteria.MaxHeight.HasValue)
-            filtered = filtered.Where(p => p.Height <= criteria.MaxHeight.Value);
-        if (criteria.MinWeight.HasValue)
-            filtered = filtered.Where(p => p.Weight >= criteria.MinWeight.Value);
-        if (criteria.MaxWeight.HasValue)
-            filtered = filtered.Where(p => p.Weight <= criteria.MaxWeight.Value);
-
-        // Apply sorting
-        var descending = criteria.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
-        filtered = criteria.SortBy?.ToLowerInvariant() switch
-        {
-            "hp" => descending ? filtered.OrderByDescending(p => p.Hp) : filtered.OrderBy(p => p.Hp),
-            "attack" => descending ? filtered.OrderByDescending(p => p.Attack) : filtered.OrderBy(p => p.Attack),
-            "defense" => descending ? filtered.OrderByDescending(p => p.Defense) : filtered.OrderBy(p => p.Defense),
-            "specialattack" => descending ? filtered.OrderByDescending(p => p.SpecialAttack) : filtered.OrderBy(p => p.SpecialAttack),
-            "specialdefense" => descending ? filtered.OrderByDescending(p => p.SpecialDefense) : filtered.OrderBy(p => p.SpecialDefense),
-            "speed" => descending ? filtered.OrderByDescending(p => p.Speed) : filtered.OrderBy(p => p.Speed),
-            "height" => descending ? filtered.OrderByDescending(p => p.Height) : filtered.OrderBy(p => p.Height),
-            "weight" => descending ? filtered.OrderByDescending(p => p.Weight) : filtered.OrderBy(p => p.Weight),
-            "baseexperience" => descending ? filtered.OrderByDescending(p => p.BaseExperience ?? 0) : filtered.OrderBy(p => p.BaseExperience ?? 0),
-            "totalstats" => descending
-                ? filtered.OrderByDescending(p => p.Hp + p.Attack + p.Defense + p.SpecialAttack + p.SpecialDefense + p.Speed)
-                : filtered.OrderBy(p => p.Hp + p.Attack + p.Defense + p.SpecialAttack + p.SpecialDefense + p.Speed),
-            _ => filtered.OrderBy(p => p.PokeApiId)
+            Criteria = criteria,
+            Results = results,
+            Explanation = BuildExplanation(criteria, results.TotalCount)
         };
-
-        // Apply requested count
-        if (criteria.RequestedCount.HasValue)
-        {
-            var requestedCount = Math.Clamp(criteria.RequestedCount.Value, 1, 100);
-            filtered = filtered.Take(requestedCount);
-        }
-
-        var totalCount = filtered.Count();
-        var items = filtered
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(p => new PokemonListItemResponse
-            {
-                Id = p.Id,
-                PokeApiId = p.PokeApiId,
-                Name = p.Name,
-                ImageUrl = p.ImageUrl,
-                Height = p.Height,
-                Weight = p.Weight,
-                BaseExperience = p.BaseExperience,
-                Hp = p.Hp,
-                Attack = p.Attack,
-                Defense = p.Defense,
-                SpecialAttack = p.SpecialAttack,
-                SpecialDefense = p.SpecialDefense,
-                Speed = p.Speed,
-                IsLegendary = p.IsLegendary,
-                Types = p.Types
-            })
-            .ToList();
-
-        return new PokemonPagedResponse
-        {
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize),
-            Items = items
-        };
-    }
-
-    private async Task<PokemonSmartSearchCriteria> ParseCriteriaByRulesAsync(string query)
-    {
-        return await Task.FromResult(ParseCriteriaByRules(query));
     }
 
     private async Task<PokemonSmartSearchCriteria?> TryParseCriteriaWithGeminiAsync(
