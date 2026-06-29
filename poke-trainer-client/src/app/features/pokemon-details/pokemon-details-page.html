@@ -46,8 +46,13 @@
         </div>
       }
 
-      <button class="primary-button" type="button" (click)="addToTeam()">
-        Add to Dream Team
+      <button
+        class="primary-button"
+        type="button"
+        [disabled]="isInTeam()"
+        (click)="addToTeam()"
+      >
+        {{ isInTeam() ? 'In Team' : 'Add to Dream Team' }}
       </button>
     </div>
   </section>

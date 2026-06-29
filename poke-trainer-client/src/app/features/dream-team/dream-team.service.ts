@@ -44,9 +44,13 @@ export class DreamTeamService {
   }
 
   updateNickname(teamItemId: number, nickname: string): Observable<DreamTeamItem> {
-    const request: UpdateNicknameRequest = { nickname };
-    return this.http.put<DreamTeamItem>(`${API_BASE_URL}/dream-team/${teamItemId}/nickname`, request);
-  }
+  const request: UpdateNicknameRequest = { nickname };
+
+  return this.http.put<DreamTeamItem>(
+    `${API_BASE_URL}/dream-team/${teamItemId}`,
+    request
+  );
+}
 
   removePokemon(teamItemId: number): Observable<void> {
     return this.http.delete<void>(`${API_BASE_URL}/dream-team/${teamItemId}`);

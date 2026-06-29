@@ -46,7 +46,11 @@ export class DreamTeamStateService {
   refresh(): Observable<DreamTeamItem[]> {
     return this.load(true);
   }
-
+  removePokemonFromState(pokeApiId: number): void {
+    this.teamSignal.update(team =>
+      team.filter(item => item.pokeApiId !== pokeApiId)
+    );
+  }
   clear(): void {
     this.teamSignal.set([]);
     this.loaded = false;

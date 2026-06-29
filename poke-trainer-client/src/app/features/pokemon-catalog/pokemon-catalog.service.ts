@@ -57,11 +57,26 @@ export class PokemonCatalogService {
       .pipe(map(response => normalizePokemonListResponse(response, page, pageSize)));
   }
 
-  getPokemonById(pokeApiId: number): Observable<PokemonDetails> {
-    return this.http.get<PokemonDetails>(`${API_BASE_URL}/pokemon/${pokeApiId}`);
-  }
+ getPokemonById(pokeApiId: number): Observable<PokemonDetails> {
+  return this.http
+    .get<PokemonDetails>(`${API_BASE_URL}/pokemon/${pokeApiId}`)
+    .pipe(map(response => normalizePokemonDetailsResponse(response)));
+}
 }
 
+
+function getStat(pokemon: PokemonDetails, statName: string): number | undefined {
+  return pokemon.stats?.find(stat => stat.name === statName)?.baseStat;
+}
+function normalizePokemonDetailsResponse(response: PokemonDetails): PokemonDetails {
+  return {
+    ...response,
+    hp: response.hp ?? getStat(response, 'hp'),
+    attack: response.attack ?? getStat(response, 'attack'),
+    defense: response.defense ?? getStat(response, 'defense'),
+    speed: response.speed ?? getStat(response, 'speed')
+  };
+}
 function normalizePokemonListResponse(
   response: PokemonListBackendResponse,
   page: number,

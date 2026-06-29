@@ -23,6 +23,7 @@
       title="Your Dream Team is empty"
       message="Choose Pokémon from the Catalog or Smart Search to build your team."
       actionText="Explore Catalog"
+     (click)="this.goToCatalog()"
     />
   }
 
@@ -30,9 +31,9 @@
     <div class="team-slots">
       @for (item of team(); track item.id) {
         <article class="team-slot selected card-hover">
-          <img [src]="item.imageUrl || fallbackImage" [alt]="item.pokemonName" (error)="onImageError($event)" />
+          <img [src]="item.imageUrl || fallbackImage" [alt]="item.name" (error)="onImageError($event)" />
 
-          <h2>{{ item.pokemonName }}</h2>
+          <h2>{{ item.name }}</h2>
 
           <div class="types">
             @for (type of item.types; track type) {
@@ -72,9 +73,8 @@
 
       @for (slot of emptySlots(); track slot) {
         <article class="team-slot empty">
-          <div class="empty-ball">+</div>
-          <strong>Empty slot</strong>
-          <small>Select a Pokémon from the Catalog or Smart Search.</small>
+          <div class="empty-ball" (click)="goToCatalog()"> + </div>         
+          <small>Select a Pokémon from the Catalog</small>
         </article>
       }
     </div>

@@ -3,7 +3,7 @@ import { PokemonListItem } from './pokemon.model';
 export interface DreamTeamItem {
   id: number;
   pokeApiId: number;
-  pokemonName: string;
+  name: string;
   imageUrl?: string | null;
   nickname?: string | null;
   types: string[];

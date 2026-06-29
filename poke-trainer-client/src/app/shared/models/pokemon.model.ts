@@ -1,3 +1,9 @@
+export interface PokemonStat {
+  name: string;
+  baseStat: number;
+  effort?: number;
+}
+
 export interface PokemonListItem {
   id?: number;
   pokeApiId: number;
@@ -15,4 +21,10 @@ export interface PokemonListItem {
 export interface PokemonDetails extends PokemonListItem {
   abilities?: string[];
   description?: string | null;
+
+  baseExperience?: number;
+  isLegendary?: boolean;
+  createdAt?: string;
+
+  stats?: PokemonStat[];
 }

@@ -1,8 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit,computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink,Router } from '@angular/router';
 
 import { DreamTeamService } from './dream-team.service';
+import { DreamTeamStateService } from './dream-team-state.service';
 import { EmptyState } from '../../shared/components/empty-state';
 import { ErrorState } from '../../shared/components/error-state';
 import { PokeballLoader } from '../../shared/components/pokeball-loader';
@@ -17,7 +18,8 @@ import { DreamTeamItem } from '../../shared/models/dream-team.model';
 })
 export class DreamTeamPage implements OnInit {
   private readonly dreamTeamService = inject(DreamTeamService);
-
+  private readonly dreamTeamStateService = inject(DreamTeamStateService);
+  private readonly router = inject(Router);
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -27,6 +29,7 @@ export class DreamTeamPage implements OnInit {
 
   readonly fallbackImage = 'assets/pokemon-placeholder.svg';
 
+  
   ngOnInit(): void {
     this.load();
   }
@@ -46,14 +49,17 @@ export class DreamTeamPage implements OnInit {
       }
     });
   }
-
+  goToCatalog(): void {
+    this.router.navigate(['/app/catalog']);
+  }
   remove(item: DreamTeamItem): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
     this.dreamTeamService.removePokemon(item.id).subscribe({
       next: () => {
-        this.successMessage.set(`${item.pokemonName} was removed from your Dream Team.`);
+        this.successMessage.set(`${item.name} was removed from your Dream Team.`);
+        this.dreamTeamStateService.removePokemonFromState(item.pokeApiId);
         this.load();
       },
       error: error => this.errorMessage.set(error?.message ?? 'Failed to remove Pokémon.')
@@ -66,7 +72,10 @@ export class DreamTeamPage implements OnInit {
 
     this.dreamTeamService.updateNickname(item.id, nickname).subscribe({
       next: updated => {
-        this.successMessage.set(`Nickname saved for ${updated.pokemonName}.`);
+         const pokemonName =  
+        item.name ??    
+        'Pokémon';
+        this.successMessage.set(`Nickname saved for ${pokemonName}.`);
         this.team.update(team => team.map(current => current.id === updated.id ? updated : current));
       },
       error: error => this.errorMessage.set(error?.message ?? 'Failed to save nickname.')
@@ -90,14 +99,22 @@ export class DreamTeamPage implements OnInit {
         this.errorMessage.set(error?.message ?? 'Failed to generate nicknames.');
       }
     });
+    
   }
 
-  emptySlots(): number[] {
-    return Array.from({ length: Math.max(0, 5 - this.team().length) }, (_, index) => index + 1);
-  }
+emptySlots(): number[] {
+  const selectedCount = this.team().length;
+  const emptyCount = Math.max(0, 5 - selectedCount);
+
+  return Array.from(
+    { length: emptyCount },
+    (_, index) => selectedCount + index + 1
+  );
+}
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.src = this.fallbackImage;
   }
+  
 }

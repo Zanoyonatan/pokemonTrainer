@@ -1,14 +1,14 @@
 <article class="pokemon-card card-hover">
   <div class="image-wrap">
-   <img
-  [src]="pokemon.imageUrl || fallbackImage"
-  [alt]="pokemon.name"
-  loading="lazy"
-  decoding="async"
-  width="140"
-  height="140"
-  (error)="onImageError($event)"
-/>
+    <img
+      [src]="pokemon.imageUrl || fallbackImage"
+      [alt]="pokemon.name"
+      loading="lazy"
+      decoding="async"
+      width="108"
+      height="108"
+      (error)="onImageError($event)"
+    />
   </div>
 
   <div class="content">
@@ -24,25 +24,37 @@
     </div>
 
     <dl class="stats">
-      <div><dt>HP</dt><dd>{{ pokemon.hp ?? '-' }}</dd></div>
-      <div><dt>ATK</dt><dd>{{ pokemon.attack ?? '-' }}</dd></div>
-      <div><dt>DEF</dt><dd>{{ pokemon.defense ?? '-' }}</dd></div>
-      <div><dt>SPD</dt><dd>{{ pokemon.speed ?? '-' }}</dd></div>
+      <div>
+        <dt>HP</dt>
+        <dd>{{ pokemon.hp }}</dd>
+      </div>
+      <div>
+        <dt>ATK</dt>
+        <dd>{{ pokemon.attack }}</dd>
+      </div>
+      <div>
+        <dt>DEF</dt>
+        <dd>{{ pokemon.defense }}</dd>
+      </div>
+      <div>
+        <dt>SPD</dt>
+        <dd>{{ pokemon.speed }}</dd>
+      </div>
     </dl>
 
     <div class="actions">
-      <a class="secondary-button" [routerLink]="['/app/pokemon', pokemon.pokeApiId]">
-        Details
-      </a>
-
       <button
         class="primary-button"
         type="button"
         [disabled]="isInTeam"
-        (click)="addToTeam.emit(pokemon)"
+      (click)="addToTeam.emit(pokemon)"
       >
         {{ isInTeam ? 'In Team' : 'Add' }}
       </button>
+
+      <a class="secondary-button" [routerLink]="['/app/pokemon', pokemon.pokeApiId]">
+        Details
+      </a>
     </div>
   </div>
 </article>

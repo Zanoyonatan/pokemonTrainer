@@ -24,20 +24,39 @@ export class AuthService {
 
   login(request: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthBackendResponse>(`${API_BASE_URL}/auth/login`, request).pipe(
-      map(response => normalizeAuthResponse(response, request.email)),
+      map(response => normalizeLoginResponse(response, request.email)),
       tap(response => this.applyAuthResponse(response))
     );
   }
 
-  register(request: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthBackendResponse>(`${API_BASE_URL}/auth/register`, request).pipe(
-      map(response => normalizeAuthResponse(response, request.email, request.displayName)),
-      tap(response => this.applyAuthResponse(response))
-    );
+  register(request: RegisterRequest): Observable<TrainerProfile> {
+    return this.http.post<TrainerProfile>(`${API_BASE_URL}/auth/register`, request);
   }
 
   me(): Observable<TrainerProfile> {
     return this.http.get<TrainerProfile>(`${API_BASE_URL}/auth/me`).pipe(
+      map(profile => {
+        const currentTrainer = this.trainerSignal();
+
+        const displayName =
+          profile.displayName ??
+          profile.trainerName ??
+          profile.name ??
+          currentTrainer?.displayName ??
+          currentTrainer?.trainerName ??
+          currentTrainer?.name;
+
+        return {
+          ...currentTrainer,
+          ...profile,
+          id: profile.id ?? profile.userId ?? currentTrainer?.id,
+          userId: profile.userId ?? currentTrainer?.userId,
+          displayName,
+          trainerName: profile.trainerName ?? displayName,
+          name: profile.name ?? displayName,
+          email: profile.email ?? currentTrainer?.email ?? ''
+        };
+      }),
       tap(trainer => this.trainerSignal.set(trainer))
     );
   }
@@ -57,7 +76,7 @@ export class AuthService {
   }
 }
 
-function normalizeAuthResponse(
+function normalizeLoginResponse(
   response: AuthBackendResponse,
   fallbackEmail: string,
   fallbackDisplayName = 'Trainer'
@@ -68,15 +87,33 @@ function normalizeAuthResponse(
     throw new Error('Login response did not contain a JWT token.');
   }
 
-  const trainer = response.trainer ?? response.user ?? {
+  const backendTrainer = response.trainer ?? response.user;
+
+  const displayName =
+    backendTrainer?.displayName ??
+    backendTrainer?.trainerName ??
+    backendTrainer?.name ??
+    response.displayName ??
+    response.trainerName ??
+    response.name ??
+    fallbackDisplayName;
+
+  const trainer: TrainerProfile = backendTrainer ?? {
     email: response.email ?? fallbackEmail,
-    displayName: response.displayName ?? response.trainerName ?? fallbackDisplayName,
-    trainerName: response.trainerName ?? response.displayName ?? fallbackDisplayName
+    displayName,
+    trainerName: displayName,
+    name: displayName
   };
 
   return {
     token,
     expiresAt: response.expiresAt,
-    trainer
+    trainer: {
+      ...trainer,
+      displayName: trainer.displayName ?? trainer.trainerName ?? trainer.name ?? displayName,
+      trainerName: trainer.trainerName ?? trainer.displayName ?? trainer.name ?? displayName,
+      name: trainer.name ?? trainer.displayName ?? trainer.trainerName ?? displayName,
+      email: trainer.email ?? fallbackEmail
+    }
   };
 }

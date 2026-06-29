@@ -10,9 +10,11 @@ export interface RegisterRequest {
 }
 
 export interface TrainerProfile {
-  id?: number;
+  id?: string | number;
+  userId?: string;
   displayName?: string;
   trainerName?: string;
+  name?: string;
   email: string;
 }
 
@@ -31,7 +33,10 @@ export interface AuthBackendResponse {
   trainer?: TrainerProfile;
   user?: TrainerProfile;
 
+  id?: string | number;
+  userId?: string;
   email?: string;
   displayName?: string;
   trainerName?: string;
+  name?: string;
 }

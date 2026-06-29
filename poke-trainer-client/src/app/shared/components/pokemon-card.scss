@@ -1,25 +1,28 @@
 .pokemon-card {
   display: grid;
-  gap: 16px;
-  padding: 18px;
-  border-radius: 24px;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
   background: white;
   border: 1px solid rgba(148, 163, 184, 0.18);
+  min-width: 0;
 }
 
 .image-wrap {
   display: grid;
   place-items: center;
-  min-height: 150px;
-  border-radius: 20px;
+  min-height: 118px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at center, rgba(79, 70, 229, 0.14), transparent 58%),
     #f8fafc;
 }
 
 .image-wrap img {
-  max-width: 140px;
-  max-height: 140px;
+  width: 108px;
+  height: 108px;
+  max-width: 108px;
+  max-height: 108px;
   object-fit: contain;
   transition: transform 180ms ease;
 }
@@ -30,64 +33,75 @@
 
 .content {
   display: grid;
-  gap: 14px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .title-row {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  min-width: 0;
 }
 
 h3 {
   margin: 0;
-  font-size: 22px;
+  font-size: 18px;
+  line-height: 1.15;
   text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .id {
   color: var(--color-muted);
   font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .types {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 6px;
   margin: 0;
 }
 
 .stats div {
-  padding: 8px;
-  border-radius: 14px;
+  padding: 7px 4px;
+  border-radius: 12px;
   background: #f8fafc;
   text-align: center;
 }
 
 dt {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 850;
   color: var(--color-muted);
 }
 
 dd {
   margin: 2px 0 0;
+  font-size: 13px;
   font-weight: 850;
   color: var(--color-text);
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .actions > * {
   flex: 1;
+  padding: 10px 12px;
+  font-size: 13px;
 }
