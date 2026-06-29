@@ -1,0 +1,1 @@
+customize shared  grid for  different search types
