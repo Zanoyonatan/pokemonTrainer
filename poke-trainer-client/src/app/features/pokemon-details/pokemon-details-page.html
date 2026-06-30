@@ -46,14 +46,19 @@
         </div>
       }
 
+    <span
+    class="add-button-wrapper"
+    [attr.title]="getAddDisabledReason()"
+    >
       <button
-        class="primary-button"
-        type="button"
-        [disabled]="isInTeam()"
-        (click)="addToTeam()"
+      class="primary-button"
+      type="button"
+      [disabled]="!canAddToTeam()"
+      (click)="addToTeam()"
       >
-        {{ isInTeam() ? 'In Team' : 'Add to Dream Team' }}
+      {{ isInTeam() ? 'In Team' : 'Add to Dream Team' }}
       </button>
+    </span>
     </div>
   </section>
 }

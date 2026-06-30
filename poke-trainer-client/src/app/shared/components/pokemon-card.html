@@ -43,14 +43,19 @@
     </dl>
 
     <div class="actions">
-      <button
-        class="primary-button"
-        type="button"
-        [disabled]="isInTeam"
-      (click)="addToTeam.emit(pokemon)"
-      >
-        {{ isInTeam ? 'In Team' : 'Add' }}
-      </button>
+      <span
+  class="add-button-wrapper"
+  [attr.title]="addDisabledReason"
+>
+  <button
+    class="primary-button"
+    type="button"
+    [disabled]="!canAddToTeam"
+    (click)="addToTeam.emit(pokemon)"
+  >
+    {{ isInTeam ? 'In Team' : 'Add' }}
+  </button>
+</span>
 
       <a class="secondary-button" [routerLink]="['/app/pokemon', pokemon.pokeApiId]">
         Details

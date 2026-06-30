@@ -26,7 +26,7 @@ export class PokemonDetailsPage implements OnInit {
   readonly pokemon = signal<PokemonDetails | null>(null);
   readonly teamPokeApiIds = this.dreamTeamStateService.teamPokeApiIds;
   readonly fallbackImage = 'assets/pokemon-placeholder.svg';
-
+  private readonly maxTeamSize = 5;
   ngOnInit(): void {
     this.load();
     this.loadTeamStatus();
@@ -101,5 +101,36 @@ isInTeam(): boolean {
   return currentPokemon
     ? this.teamPokeApiIds().has(currentPokemon.pokeApiId)
     : false;
+}
+isTeamFull(): boolean {
+  return this.teamPokeApiIds().size >= this.maxTeamSize;
+}
+
+canAddToTeam(): boolean {
+  const currentPokemon = this.pokemon();
+
+  if (!currentPokemon) {
+    return false;
+  }
+
+  return !this.isInTeam() && !this.isTeamFull();
+}
+
+getAddDisabledReason(): string | null {
+  const currentPokemon = this.pokemon();
+
+  if (!currentPokemon) {
+    return null;
+  }
+
+  if (this.isInTeam()) {
+    return 'This Pokémon is already in your Dream Team.';
+  }
+
+  if (this.isTeamFull()) {
+    return 'Your Dream Team is full. Remove a Pokémon before adding another one.';
+  }
+
+  return null;
 }
 }

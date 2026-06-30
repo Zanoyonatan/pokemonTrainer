@@ -1,1 +1,1 @@
-customize shared  grid for  different search types
+fix analayzer AI bugs

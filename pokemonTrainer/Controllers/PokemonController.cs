@@ -32,6 +32,7 @@ public class PokemonController : ControllerBase
         [FromQuery] string? type,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string? sortBy = null,
         CancellationToken cancellationToken = default)
     {
         if (!_statusService.IsReady)
@@ -44,6 +45,7 @@ public class PokemonController : ControllerBase
             type,
             page,
             pageSize,
+            sortBy,
             cancellationToken);
 
         return Ok(response);

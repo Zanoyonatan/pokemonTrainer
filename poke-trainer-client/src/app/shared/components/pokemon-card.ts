@@ -13,7 +13,9 @@ import { TypeBadge } from './type-badge';
 export class PokemonCard {
   @Input({ required: true }) pokemon!: PokemonListItem;
   @Input() isInTeam = false;
-
+  @Input() canAddToTeam = true;
+  @Input() addDisabledReason: string | null = null;
+  
   @Output() addToTeam = new EventEmitter<PokemonListItem>();
 
   readonly fallbackImage = 'assets/pokemon-placeholder.svg';

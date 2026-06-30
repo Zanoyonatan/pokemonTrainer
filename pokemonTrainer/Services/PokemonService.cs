@@ -1,6 +1,7 @@
 ﻿using pokemonTrainer.DTOs.AiSearch;
 using pokemonTrainer.DTOs.Common;
 using pokemonTrainer.DTOs.Pokemon;
+using pokemonTrainer.Models;
 
 namespace pokemonTrainer.Services;
 
@@ -19,6 +20,7 @@ public class PokemonService
         string? type,
         int page = 1,
         int pageSize = 20,
+        string? sortBy = null,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(page, 1);
@@ -30,7 +32,7 @@ public class PokemonService
 
         query = ApplySearchFilter(query, search);
         query = ApplyTypeFilter(query, type);
-        query = query.OrderBy(p => p.PokeApiId);
+        query = ApplySorting(query, sortBy);
 
         return BuildPagedResponseFromCache(
             query,
@@ -183,7 +185,39 @@ public class PokemonService
 
         return query;
     }
+    private static IEnumerable<PokemonCatalogCacheItem> ApplySorting(
+        IEnumerable<PokemonCatalogCacheItem> query,
+        string? sortBy)
+    {
+        return sortBy?.Trim().ToLowerInvariant() switch
+        {
+            "hp" => query
+                .OrderByDescending(p => p.Hp)
+                .ThenBy(p => p.PokeApiId),
 
+            "attack" => query
+                .OrderByDescending(p => p.Attack)
+                .ThenBy(p => p.PokeApiId),
+
+            "defense" => query
+                .OrderByDescending(p => p.Defense)
+                .ThenBy(p => p.PokeApiId),
+
+            "speed" => query
+                .OrderByDescending(p => p.Speed)
+                .ThenBy(p => p.PokeApiId),
+
+            "name" => query
+                .OrderBy(p => p.Name)
+                .ThenBy(p => p.PokeApiId),
+
+            null or "" => query
+                .OrderBy(p => p.PokeApiId),
+
+            _ => query
+                .OrderBy(p => p.PokeApiId)
+        };
+    }
     private static IEnumerable<PokemonCatalogCacheItem> ApplySorting(
         IEnumerable<PokemonCatalogCacheItem> query,
         PokemonSmartSearchCriteria criteria)
