@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DreamTeamService } from '../dream-team/dream-team.service';
 import { DreamTeamStateService } from '../dream-team/dream-team-state.service';
+import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
 import { PokemonCatalogService } from '../pokemon-catalog/pokemon-catalog.service';
 import { ErrorState } from '../../shared/components/error-state';
 import { PokeballLoader } from '../../shared/components/pokeball-loader';
@@ -50,7 +51,7 @@ export class PokemonDetailsPage implements OnInit {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Details failed to load.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not load this Pokémon. Please try again.'));
       }
     });
   }
@@ -77,7 +78,7 @@ export class PokemonDetailsPage implements OnInit {
       });
     },
     error: error => {
-      this.errorMessage.set(error?.message ?? 'Failed to add Pokémon to Dream Team.');
+      this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not add this Pokémon to your Dream Team.'));
     }
   });
 }

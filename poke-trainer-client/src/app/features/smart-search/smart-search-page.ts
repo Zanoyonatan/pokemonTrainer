@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DreamTeamService } from '../dream-team/dream-team.service';
+import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
 import { SmartSearchService } from './smart-search.service';
 import { ErrorState } from '../../shared/components/error-state';
 import { PokemonCard } from '../../shared/components/pokemon-card';
@@ -64,7 +65,7 @@ export class SmartSearchPage {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Smart Search failed.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'Smart Search is temporarily unavailable. Please try a simpler search or try again later.'));
       }
     });
   }
@@ -78,7 +79,7 @@ export class SmartSearchPage {
         this.successMessage.set(`${pokemon.name} was added to your Dream Team.`);
         this.loadTeamIds();
       },
-      error: error => this.errorMessage.set(error?.message ?? 'Failed to add Pokémon to Dream Team.')
+      error: error => this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not add this Pokémon to your Dream Team.'))
     });
   }
 

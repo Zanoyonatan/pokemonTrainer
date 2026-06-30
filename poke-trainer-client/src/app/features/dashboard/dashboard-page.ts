@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
 import { DreamTeamStateService } from '../dream-team/dream-team-state.service';
 import { ErrorState } from '../../shared/components/error-state';
 import { PokeballLoader } from '../../shared/components/pokeball-loader';
@@ -37,7 +38,7 @@ export class DashboardPage implements OnInit {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Dashboard failed to load.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not load your dashboard. Please try again.'));
       }
     });
   }

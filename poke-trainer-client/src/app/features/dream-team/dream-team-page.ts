@@ -4,6 +4,7 @@ import { RouterLink,Router } from '@angular/router';
 
 import { DreamTeamService } from './dream-team.service';
 import { DreamTeamStateService } from './dream-team-state.service';
+import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
 import { EmptyState } from '../../shared/components/empty-state';
 import { ErrorState } from '../../shared/components/error-state';
 import { PokeballLoader } from '../../shared/components/pokeball-loader';
@@ -45,7 +46,7 @@ export class DreamTeamPage implements OnInit {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Dream Team failed to load.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not load your Dream Team. Please try again.'));
       }
     });
   }
@@ -62,7 +63,7 @@ export class DreamTeamPage implements OnInit {
         this.dreamTeamStateService.removePokemonFromState(item.pokeApiId);
         this.load();
       },
-      error: error => this.errorMessage.set(error?.message ?? 'Failed to remove Pokémon.')
+      error: error => this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not remove this Pokémon from your Dream Team.'))
     });
   }
 
@@ -78,7 +79,7 @@ export class DreamTeamPage implements OnInit {
         this.successMessage.set(`Nickname saved for ${pokemonName}.`);
         this.team.update(team => team.map(current => current.id === updated.id ? updated : current));
       },
-      error: error => this.errorMessage.set(error?.message ?? 'Failed to save nickname.')
+      error: error => this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not save that nickname. Please try again.'))
     });
   }
 
@@ -96,7 +97,7 @@ export class DreamTeamPage implements OnInit {
       },
       error: error => {
         this.generatingNicknameFor.set(null);
-        this.errorMessage.set(error?.message ?? 'Failed to generate nicknames.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not generate nickname suggestions right now.'));
       }
     });
     

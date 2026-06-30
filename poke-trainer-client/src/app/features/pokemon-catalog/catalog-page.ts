@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DreamTeamService } from '../dream-team/dream-team.service';
 import { DreamTeamStateService } from '../dream-team/dream-team-state.service';
 import { SmartSearchService } from '../smart-search/smart-search.service';
+import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
 import { PokemonCatalogService } from './pokemon-catalog.service';
 
 import { EmptyState } from '../../shared/components/empty-state';
@@ -158,7 +159,7 @@ export class CatalogPage implements OnInit {
         },
         error: error => {
           this.isLoading.set(false);
-          this.errorMessage.set(error?.message ?? 'Catalog failed to load.');
+          this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not load the Pokémon catalog. Please try again.'));
         }
       });
   }
@@ -199,7 +200,7 @@ export class CatalogPage implements OnInit {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Smart Search failed.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'Smart Search is temporarily unavailable. Please try a simpler search or try again later.'));
       }
     });
   }
@@ -249,7 +250,7 @@ export class CatalogPage implements OnInit {
         });
       },
       error: error => {
-        this.errorMessage.set(error?.message ?? 'Failed to add Pokémon to Dream Team.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not add this Pokémon to your Dream Team.'));
       }
     });
   }

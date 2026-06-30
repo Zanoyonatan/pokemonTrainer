@@ -1,1 +1,1 @@
-fix analayzer AI bugs
+errors user friendly

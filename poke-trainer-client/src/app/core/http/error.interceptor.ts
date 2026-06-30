@@ -12,6 +12,13 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
+      console.error('HTTP request failed', {
+        url: request.url,
+        method: request.method,
+        status: error.status,
+        error
+      });
+
       const apiError = mapHttpError(error);
 
       if (apiError.status === 401) {

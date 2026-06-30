@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { TeamAnalyzerService } from './team-analyzer.service';
+import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
 import { ErrorState } from '../../shared/components/error-state';
 import { PokeballLoader } from '../../shared/components/pokeball-loader';
 import { TeamAnalysisResult } from '../../shared/models/dream-team.model';
@@ -35,7 +36,7 @@ export class TeamAnalyzerPage implements OnInit {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Analyzer failed.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not analyze your Dream Team right now. Please try again.'));
       }
     });
   }

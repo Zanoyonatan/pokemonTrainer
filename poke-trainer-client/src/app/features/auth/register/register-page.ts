@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { getUserFriendlyErrorMessage } from '../../../core/errors/user-friendly-error-message';
 import { PokeballLoader } from '../../../shared/components/pokeball-loader';
 
 @Component({
@@ -50,7 +51,7 @@ export class RegisterPage {
       },
       error: error => {
         this.isLoading.set(false);
-        this.errorMessage.set(error?.message ?? 'Registration failed.');
+        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not create your account. Please try again.'));
       }
     });
   }
