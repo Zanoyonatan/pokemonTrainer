@@ -1,65 +1,172 @@
 <section class="page-card">
   <p class="eyebrow">Pokédex</p>
+
   <h1 class="page-title">Pokémon Catalog</h1>
+
   <p class="page-description">
-    Browse Pokémon imported by the backend from PokeAPI into SQL Server.
+    Browse Pokémon Use regular filters or AI Smart Search to discover Pokémon.
   </p>
 
-  <div class="toolbar">
-    <input [(ngModel)]="search" placeholder="Search Pokémon by name..." (keyup.enter)="applyFilters()" />
+  <div class="catalog-tabs">
+    <button
+      type="button"
+      [class.active]="activeTab() === 'criteria'"
+      (click)="selectTab('criteria')"
+    >
+      Search by Criteria
+    </button>
 
-    <select [(ngModel)]="type" (change)="applyFilters()">
+    <button
+      type="button"
+      [class.active]="activeTab() === 'smart'"
+      (click)="selectTab('smart')"
+    >
+      Smart Search
+    </button>
+  </div>
+
+@if (activeTab() === 'criteria') {
+  <form class="toolbar" (ngSubmit)="applyFilters()">
+    <input
+      type="text"
+      name="search"
+      [(ngModel)]="search"
+      placeholder="Search Pokémon by name..."
+      autocomplete="off"
+      (keyup.enter)="applyFilters()"
+    />
+
+    <select name="type" [(ngModel)]="type" (change)="applyFilters()">
       <option value="">All types</option>
+
       @for (pokemonType of types; track pokemonType) {
         <option [value]="pokemonType">{{ pokemonType }}</option>
       }
     </select>
 
-    <select [(ngModel)]="sortBy" (change)="applyFilters()">
-      <option value="name">Name</option>
-      <option value="hp">HP</option>
-      <option value="attack">Attack</option>
-      <option value="defense">Defense</option>
-      <option value="speed">Speed</option>
-    </select>
+    <button
+      class="primary-button"
+      type="submit"
+      [disabled]="isLoading()"
+    >
+      Search
+    </button>
+  </form>
 
-    <button class="primary-button" type="button" (click)="applyFilters()">Search</button>
+  <div class="results-options">
+  <label for="sortBy">Sort results by</label>
+
+    <select
+      id="sortBy"
+      name="sortBy"
+      [(ngModel)]="sortBy"
+      (change)="applyFilters()"
+    >
+      <option value="">Pokédex ID</option>
+      <option value="name">Name</option>
+      <option value="hp">Highest HP</option>
+      <option value="attack">Highest Attack</option>
+      <option value="defense">Highest Defense</option>
+      <option value="speed">Highest Speed</option>
+    </select>
   </div>
+  }
+  @if (activeTab() === 'smart') {
+    <form class="smart-search-panel" (ngSubmit)="smartSearch()">
+      <input
+        type="text"
+        name="smartQuery"
+        [(ngModel)]="smartQuery"
+        placeholder="Example: best fire pokemon with high hp"
+        autocomplete="off"
+      />
+
+      <button
+        class="primary-button"
+        type="submit"
+        [disabled]="isLoading()"
+      >
+        AI Search
+      </button>
+    </form>
+
+    <div class="smart-examples">
+      <span>Try:</span>
+
+      @for (example of smartSearchExamples; track example) {
+        <button
+          type="button"
+          class="example-chip"
+          (click)="useSmartExample(example)"
+        >
+          {{ example }}
+        </button>
+      }
+    </div>
+  }
 
   @if (successMessage(); as message) {
-    <div class="inline-success">{{ message }}</div>
+    <div class="inline-success">
+      {{ message }}
+    </div>
   }
 
   @if (errorMessage(); as message) {
-    <app-error-state title="Catalog unavailable" [message]="message" (retry)="loadCatalog()" />
+    <app-error-state
+      title="Catalog unavailable"
+      [message]="message"
+      (retry)="activeTab() === 'criteria' ? loadCatalog() : smartSearch()"
+    />
   } @else if (isLoading()) {
     <app-pokeball-loader text="Loading your Pokédex..." />
-  } @else if (pokemons().length === 0) {
-    <app-empty-state
-      title="No Pokémon found"
-      message="Try a different search, type or sort option."
-      actionText="Reset filters"
-      (actionClick)="search = ''; type = ''; sortBy = 'name'; applyFilters()"
-    />
   } @else {
-    <div class="catalog-meta">
-      <span>{{ totalCount }} Pokémon found</span>
-      <span>Page {{ page }} / {{ totalPages }}</span>
-    </div>
+    @if (currentPokemons().length > 0) {
+      <div class="catalog-meta">
+        <span>{{ currentTotalCount() }} Pokémon found</span>
+        <span>Page {{ currentPage() }} / {{ currentTotalPages() }}</span>
+      </div>
 
-    <div class="catalog-grid">
-      @for (pokemon of pokemons(); track pokemon.pokeApiId) {
-        <app-pokemon-card
-          [pokemon]="pokemon"
-          [isInTeam]="isInTeam(pokemon)"
-          (addToTeam)="addToTeam($event)"
-        />
+      <app-pokemon-results-grid
+        [pokemons]="currentPokemons()"
+        [teamPokeApiIds]="teamPokeApiIds()"
+        (addToTeam)="addToTeam($event)"
+      />
+
+      @if (activeTab() === 'criteria' && totalPages() > 1) {
+        <div class="pagination">
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="page() <= 1"
+            (click)="previousPage()"
+          >
+            Previous
+          </button>
+
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="page() >= totalPages()"
+            (click)="nextPage()"
+          >
+            Next
+          </button>
+        </div>
       }
-    </div>
 
-    <div class="pagination">
-      <button class="secondary-button" type="button" [disabled]="page <= 1" (click)="previousPage()">Previous</button>
-      <button class="secondary-button" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Next</button>
-    </div>
+      @if (activeTab() === 'smart' && smartExplanation(); as explanation) {
+        <details class="search-explanation">
+          <summary>How we interpreted your search</summary>
+          <p>{{ explanation }}</p>
+        </details>
+      }
+    } @else if (shouldShowEmptyState()) {
+      <app-empty-state
+        title="No Pokémon found"
+        message="Try changing your search criteria or smart search request."
+        actionText="Reset filters"
+        (actionClick)="activeTab() === 'criteria' ? resetFilters() : null"
+      />
+    }
   }
 </section>

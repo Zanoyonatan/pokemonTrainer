@@ -1,0 +1,11 @@
+<section class="pokemon-results-grid">
+  @for (pokemon of pokemons; track pokemon.pokeApiId) {
+    <app-pokemon-card
+      [pokemon]="pokemon"
+      [isInTeam]="isInTeam(pokemon)"
+      [canAddToTeam]="canAddToTeam(pokemon)"
+      [addDisabledReason]="getAddDisabledReason(pokemon)"
+      (addToTeam)="addToTeam.emit($event)"
+    />
+  }
+</section>
