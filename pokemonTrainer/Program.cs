@@ -90,6 +90,7 @@ namespace pokemonTrainer
             builder.Services.AddScoped<PokemonNicknameService>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<PokemonSmartSearchService>();
+            builder.Services.AddScoped<PokemonCatalogAverageService>();
             builder.Services.Configure<GeminiOptions>(
             builder.Configuration.GetSection("Gemini"));
 

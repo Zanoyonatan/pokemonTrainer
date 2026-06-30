@@ -50,7 +50,7 @@ export class CatalogPage implements OnInit {
 
   readonly teamPokeApiIds = this.dreamTeamState.teamPokeApiIds;
 
-  readonly pageSize = 8;
+  readonly pageSize = 10;
 
   search = '';
   type = '';

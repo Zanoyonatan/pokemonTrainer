@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using pokemonTrainer.Data;
 using pokemonTrainer.DTOs.DreamTeamAnalysis;
 using pokemonTrainer.Services.Ai;
+using pokemonTrainer.DTOs.Pokemon;
 
 namespace pokemonTrainer.Services;
 
@@ -11,7 +12,8 @@ public class DreamTeamAnalysisService
     private readonly ApplicationDbContext _dbContext;
     private readonly GeminiTextGenerationService _geminiService;
     private readonly ILogger<DreamTeamAnalysisService> _logger;
-
+    private readonly PokemonCatalogAverageService _catalogAverageService;
+    private const int maxTeamSize = 5;
     private static readonly List<string> RecommendedTypes = new()
     {
         "fire",
@@ -27,10 +29,12 @@ public class DreamTeamAnalysisService
     public DreamTeamAnalysisService(
         ApplicationDbContext dbContext,
         GeminiTextGenerationService geminiService,
+        PokemonCatalogAverageService catalogAverageService,
         ILogger<DreamTeamAnalysisService> logger)
     {
         _dbContext = dbContext;
         _geminiService = geminiService;
+        _catalogAverageService = catalogAverageService;
         _logger = logger;
     }
 
@@ -78,6 +82,8 @@ public class DreamTeamAnalysisService
             avgSpecialAttack +
             avgSpecialDefense +
             avgSpeed;
+
+        var catalogAverages = await _catalogAverageService.GetAveragesAsync(cancellationToken);
 
         response.AverageStats = new TeamAverageStatsResponse
         {
@@ -152,8 +158,14 @@ public class DreamTeamAnalysisService
 
         CalculateWeaknesses(
             response,
-            avgSpeed,
+            catalogAverages,
+            avgHp,
+            avgAttack,
             avgDefense,
+            avgSpecialAttack,
+            avgSpecialDefense,
+            avgSpeed,
+            avgTotalStats,
             types.Count,
             response.CurrentTeamSize);
 
@@ -224,30 +236,61 @@ public class DreamTeamAnalysisService
 
     private static void CalculateWeaknesses(
         DreamTeamAnalysisResponse response,
-        double avgSpeed,
+        PokemonCatalogAveragesResponse catalogAverages,
+        double avgHp,
+        double avgAttack,
         double avgDefense,
+        double avgSpecialAttack,
+        double avgSpecialDefense,
+        double avgSpeed,
+        double avgTotalStats,
         int distinctTypeCount,
         int currentTeamSize)
     {
-        if (currentTeamSize < 5)
+
+       
+        if (currentTeamSize < maxTeamSize)
         {
             response.Weaknesses.Add("The team is not full yet.");
         }
-
-        if (avgSpeed < 50)
-        {
-            response.Weaknesses.Add("The team may be slow compared to faster opponents.");
-        }
-
-        if (avgDefense < 50)
-        {
-            response.Weaknesses.Add("The team may struggle defensively.");
-        }
-
-        if (distinctTypeCount < 3)
+        var minimumExpectedTypes = Math.Ceiling(currentTeamSize * 0.6);
+        bool needToCheckVariety = currentTeamSize >= Math.Ceiling((maxTeamSize / 2.0));
+        if (needToCheckVariety && distinctTypeCount < minimumExpectedTypes)
         {
             response.Weaknesses.Add("The team has limited type variety.");
         }
+
+        if (IsBelowAverage(avgHp, catalogAverages.Hp, out var hpPercentageBelow))
+        {
+            response.Weaknesses.Add(
+                $"HP is {hpPercentageBelow}% below the average Pokémon.");
+        }
+
+        if (IsBelowAverage(avgAttack, catalogAverages.Attack, out var attackPercentageBelow))
+        {
+            response.Weaknesses.Add(
+                $"Attack is {attackPercentageBelow}% below the average Pokémon.");
+        }
+
+        if (IsBelowAverage(avgDefense, catalogAverages.Defense, out var defensePercentageBelow))
+        {
+            response.Weaknesses.Add(
+                $"Defense is {defensePercentageBelow}% below the average Pokémon.");
+        }
+
+        if (IsBelowAverage(avgSpeed, catalogAverages.Speed, out var speedPercentageBelow))
+        {
+            response.Weaknesses.Add(
+                $"Speed is {speedPercentageBelow}% below the average Pokémon.");
+        }
+
+        if (IsBelowAverage(avgTotalStats, catalogAverages.TotalStats, out var totalStatsPercentageBelow))
+        {
+            response.Weaknesses.Add(
+                $"Overall stats are {totalStatsPercentageBelow}% below the average Pokémon.");
+        }
+
+
     }
 
     private static void CalculateRecommendations(
@@ -359,7 +402,7 @@ public class DreamTeamAnalysisService
 You are a friendly Pokémon trainer coach.
 
 Based only on the Dream Team analysis below, write a short, fun, encouraging summary for the trainer.
-
+always return Weaknesses even when it's empty ,if empty analyze the Weaknesses by your self
 Rules:
 - Return only valid JSON.
 - Do not return markdown.
@@ -452,5 +495,22 @@ Recommendations: {{recommendationsList}}
                (response.Recommendations.Count > 0
                    ? $"Consider: {string.Join("; ", response.Recommendations.Take(2))}"
                    : "Keep building your dream team!");
+    }
+    private static bool IsBelowAverage(
+      double teamAverage,
+      double catalogAverage,
+      out int percentageBelow)
+    {
+        percentageBelow = 0;
+
+        if (catalogAverage <= 0 || teamAverage >= catalogAverage)
+        {
+            return false;
+        }
+
+        percentageBelow = (int)Math.Round(
+            ((catalogAverage - teamAverage) / catalogAverage) * 100);
+
+        return percentageBelow >= 5;
     }
 }

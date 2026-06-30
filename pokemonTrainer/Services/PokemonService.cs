@@ -380,4 +380,5 @@ public class PokemonService
                item.SpecialDefense +
                item.Speed;
     }
+
 }

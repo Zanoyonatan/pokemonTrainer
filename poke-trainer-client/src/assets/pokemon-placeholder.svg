@@ -1,7 +1,81 @@
-<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="240" height="240" rx="48" fill="#EEF2FF"/>
-  <circle cx="120" cy="120" r="70" fill="white" stroke="#172033" stroke-width="12"/>
-  <path d="M52 120H188" stroke="#172033" stroke-width="12"/>
-  <circle cx="120" cy="120" r="24" fill="white" stroke="#172033" stroke-width="10"/>
-  <path d="M58 110C63 76 89 50 120 50C151 50 177 76 182 110H58Z" fill="#EF4444"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img" aria-label="Red and white ball icon without text">
+  <defs>
+    <radialGradient id="topRed" cx="33%" cy="22%" r="75%">
+      <stop offset="0%" stop-color="#f24941"/>
+      <stop offset="55%" stop-color="#d93631"/>
+      <stop offset="100%" stop-color="#8f1f27"/>
+    </radialGradient>
+
+    <radialGradient id="bottomWhite" cx="30%" cy="52%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#dddddd"/>
+      <stop offset="100%" stop-color="#9b9ca1"/>
+    </radialGradient>
+
+    <radialGradient id="buttonWhite" cx="38%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#eeeeee"/>
+      <stop offset="100%" stop-color="#cfcfcf"/>
+    </radialGradient>
+
+    <linearGradient id="bandShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#171717"/>
+      <stop offset="48%" stop-color="#252525"/>
+      <stop offset="100%" stop-color="#151515"/>
+    </linearGradient>
+
+    <clipPath id="ballClip">
+      <circle cx="400" cy="400" r="282"/>
+    </clipPath>
+
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#ballClip)">
+    <!-- Upper red half -->
+    <rect x="118" y="82" width="564" height="318" fill="url(#topRed)"/>
+
+    <!-- Lower white/gray half -->
+    <rect x="118" y="400" width="564" height="318" fill="url(#bottomWhite)"/>
+
+    <!-- Central black band -->
+    <rect x="98" y="363" width="604" height="76" fill="url(#bandShade)"/>
+    <rect x="98" y="363" width="604" height="12" fill="#101010" opacity="0.55"/>
+    <rect x="98" y="427" width="604" height="12" fill="#000000" opacity="0.35"/>
+
+    <!-- Lower broad shading -->
+    <path d="M160 437 C235 570, 390 641, 565 576 C526 666, 422 714, 302 690 C205 671, 142 579, 160 437Z" fill="#bcbec2" opacity="0.45"/>
+    <path d="M558 402 C528 547, 443 643, 302 674 C432 700, 599 633, 668 496 L682 400Z" fill="#8e9096" opacity="0.48"/>
+
+    <!-- Right red shadow -->
+    <path d="M570 95 C660 152, 706 251, 687 355 C650 340, 609 331, 566 330 C615 253, 618 165, 570 95Z" fill="#8a2027" opacity="0.36"/>
+    <path d="M640 210 C664 260, 671 307, 660 352" fill="none" stroke="#f06b6b" stroke-width="14" stroke-linecap="round" opacity="0.18"/>
+
+    <!-- Large white highlight on lower half -->
+    <path d="M178 423 C236 505, 339 543, 454 523 C392 568, 270 578, 185 507 C160 486, 147 458, 149 430 Z" fill="#ffffff" opacity="0.42"/>
+
+    <!-- Small bottom-right shine -->
+    <ellipse cx="608" cy="548" rx="34" ry="14" fill="#ffffff" opacity="0.20" transform="rotate(-35 608 548)"/>
+    <circle cx="583" cy="540" r="5" fill="#ffffff" opacity="0.25"/>
+
+    <!-- Top-left glow and shine -->
+    <circle cx="236" cy="187" r="56" fill="#ffffff" opacity="0.16" filter="url(#softGlow)"/>
+    <ellipse cx="235" cy="177" rx="39" ry="26" fill="#f7fbff" opacity="0.82" transform="rotate(-38 235 177)"/>
+    <circle cx="286" cy="197" r="7" fill="#f7fbff" opacity="0.75"/>
+    <circle cx="231" cy="184" r="74" fill="none" stroke="#ffffff" stroke-width="14" opacity="0.08"/>
+  </g>
+
+  <!-- Outer outline -->
+  <circle cx="400" cy="400" r="282" fill="none" stroke="#151515" stroke-width="8"/>
+
+  <!-- Button outer ring -->
+  <circle cx="400" cy="400" r="84" fill="#1e1e1e" stroke="#111111" stroke-width="6"/>
+  <circle cx="400" cy="400" r="56" fill="url(#buttonWhite)" stroke="#222222" stroke-width="5"/>
+  <circle cx="400" cy="400" r="36" fill="#e9e9e9" stroke="#222222" stroke-width="4"/>
 </svg>

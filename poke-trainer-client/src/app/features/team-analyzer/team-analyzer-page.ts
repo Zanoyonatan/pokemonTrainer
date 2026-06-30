@@ -41,6 +41,6 @@ export class TeamAnalyzerPage implements OnInit {
   }
 
   recommendations(report: TeamAnalysisResult): string[] {
-    return report.recommendations ?? report.suggestions ?? [];
+    return report.recommendations ?? report.recommendations ?? [];
   }
 }

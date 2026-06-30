@@ -22,21 +22,46 @@ export interface UpdateNicknameRequest {
   nickname: string;
 }
 
+export interface TeamAnalysisPokemonHighlight {
+  pokeApiId: number;
+  name: string;
+  nickname?: string | null;
+  imageUrl?: string | null;
+  value: number;
+}
+
+export interface TeamAverageStats {
+  hp: number;
+  attack: number;
+  defense: number;
+  specialAttack: number;
+  specialDefense: number;
+  speed: number;
+  totalStats: number;
+}
+
 export interface TeamAnalysisResult {
-  summary: string;
-  score?: number;
+  maxTeamSize: number;
+  currentTeamSize: number;
+  isFullTeam: boolean;
+
+  teamScore?: number;
+
+  types: string[];
+  missingRecommendedTypes: string[];
+
+  averageStats: TeamAverageStats;
+
+  fastestPokemon?: TeamAnalysisPokemonHighlight | null;
+  strongestPokemon?: TeamAnalysisPokemonHighlight | null;
+  bestDefensivePokemon?: TeamAnalysisPokemonHighlight | null;
+
   strengths: string[];
   weaknesses: string[];
-  recommendations?: string[];
-  suggestions?: string[];
-  fastestPokemon?: string;
-  strongestPokemon?: string;
-  bestDefensivePokemon?: string;
-  averageHp?: number;
-  averageAttack?: number;
-  averageDefense?: number;
-  averageSpeed?: number;
-  recommendedPokemon?: PokemonListItem[];
+  recommendations: string[];
+
+  summary: string;
+  aiSummaryUsed: boolean;
 }
 
 export interface NicknameSuggestionResult {
