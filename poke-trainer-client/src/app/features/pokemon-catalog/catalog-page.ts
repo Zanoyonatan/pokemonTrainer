@@ -5,7 +5,7 @@ import { DreamTeamService } from '../dream-team/dream-team.service';
 import { DreamTeamStateService } from '../dream-team/dream-team-state.service';
 import { SmartSearchService } from '../smart-search/smart-search.service';
 import { getUserFriendlyErrorMessage } from '../../core/errors/user-friendly-error-message';
-import { PokemonCatalogService } from './pokemon-catalog.service';
+import { PokemonCatalogStateService } from './pokemon-catalog-state.service';
 
 import { EmptyState } from '../../shared/components/empty-state';
 import { ErrorState } from '../../shared/components/error-state';
@@ -28,36 +28,57 @@ type CatalogTab = 'criteria' | 'smart';
   styleUrl: './catalog-page.scss'
 })
 export class CatalogPage implements OnInit {
-  private readonly catalogService = inject(PokemonCatalogService);
+  private readonly catalogState = inject(PokemonCatalogStateService);
   private readonly smartSearchService = inject(SmartSearchService);
   private readonly dreamTeamService = inject(DreamTeamService);
   private readonly dreamTeamState = inject(DreamTeamStateService);
 
   readonly activeTab = signal<CatalogTab>('criteria');
 
-  readonly pokemons = signal<PokemonListItem[]>([]);
   readonly smartPokemons = signal<PokemonListItem[]>([]);
-
-  readonly isLoading = signal(false);
-  readonly errorMessage = signal<string | null>(null);
+  readonly smartIsLoading = signal(false);
+  readonly localErrorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
-
-  readonly page = signal(1);
-  readonly totalPages = signal(1);
-  readonly totalCount = signal(0);
 
   readonly smartSearched = signal(false);
   readonly smartExplanation = signal<string | null>(null);
 
   readonly teamPokeApiIds = this.dreamTeamState.teamPokeApiIds;
 
-  readonly pageSize = 10;
+  readonly pageSize = 20;
 
   search = '';
   type = '';
   sortBy = 'name';
 
   smartQuery = '';
+
+  readonly pageState = this.catalogState.pageState;
+
+  readonly pokemons = computed(() => this.catalogState.result()?.items ?? []);
+  readonly page = computed(() => this.catalogState.pageState().page);
+  readonly totalPages = computed(() => this.catalogState.result()?.totalPages ?? 1);
+  readonly totalCount = computed(() => this.catalogState.result()?.totalCount ?? 0);
+
+  readonly isLoading = computed(() =>
+    this.activeTab() === 'criteria'
+      ? this.catalogState.isLoading()
+      : this.smartIsLoading()
+  );
+
+  readonly errorMessage = computed(() => {
+    const localError = this.localErrorMessage();
+
+    if (localError) {
+      return localError;
+    }
+
+    if (this.activeTab() === 'criteria') {
+      return this.catalogState.error();
+    }
+
+    return null;
+  });
 
   readonly smartSearchExamples = [
     'find best 3 pokemon',
@@ -126,67 +147,56 @@ export class CatalogPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadCatalog();
+    this.syncFiltersFromCatalogState();
+    this.catalogState.loadInitialCatalog();
     this.loadTeamStatus();
   }
 
   selectTab(tab: CatalogTab): void {
     this.activeTab.set(tab);
-    this.errorMessage.set(null);
+    this.localErrorMessage.set(null);
     this.successMessage.set(null);
   }
 
   loadCatalog(): void {
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.localErrorMessage.set(null);
     this.successMessage.set(null);
 
-    this.catalogService
-      .getPokemon(
-        this.page(),
-        this.pageSize,
-        this.search.trim(),
-        this.type,
-        this.sortBy
-      )
-      .subscribe({
-        next: result => {
-          this.pokemons.set(result.items);
-          this.page.set(result.page);
-          this.totalPages.set(result.totalPages);
-          this.totalCount.set(result.totalCount);
-          this.isLoading.set(false);
-        },
-        error: error => {
-          this.isLoading.set(false);
-          this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not load the Pokémon catalog. Please try again.'));
-        }
-      });
+    this.catalogState.refresh();
   }
 
   applyFilters(): void {
-    this.page.set(1);
-    this.loadCatalog();
+    this.localErrorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.catalogState.applyFilters(
+      this.search.trim(),
+      this.type,
+      this.sortBy
+    );
   }
 
   resetFilters(): void {
     this.search = '';
     this.type = '';
     this.sortBy = 'name';
-    this.page.set(1);
-    this.loadCatalog();
+
+    this.localErrorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.catalogState.reset();
   }
 
   smartSearch(): void {
     const query = this.smartQuery.trim();
 
     if (!query) {
-      this.errorMessage.set('Please enter a smart search request.');
+      this.localErrorMessage.set('Please enter a smart search request.');
       return;
     }
 
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.smartIsLoading.set(true);
+    this.localErrorMessage.set(null);
     this.successMessage.set(null);
     this.smartExplanation.set(null);
     this.smartPokemons.set([]);
@@ -196,11 +206,16 @@ export class CatalogPage implements OnInit {
       next: response => {
         this.smartPokemons.set(response.items);
         this.smartExplanation.set(response.explanation ?? null);
-        this.isLoading.set(false);
+        this.smartIsLoading.set(false);
       },
       error: error => {
-        this.isLoading.set(false);
-        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'Smart Search is temporarily unavailable. Please try a simpler search or try again later.'));
+        this.smartIsLoading.set(false);
+        this.localErrorMessage.set(
+          getUserFriendlyErrorMessage(
+            error,
+            'Smart Search is temporarily unavailable. Please try a simpler search or try again later.'
+          )
+        );
       }
     });
   }
@@ -219,8 +234,10 @@ export class CatalogPage implements OnInit {
       return;
     }
 
-    this.page.update(currentPage => currentPage + 1);
-    this.loadCatalog();
+    this.localErrorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.catalogState.updatePage(this.page() + 1);
   }
 
   previousPage(): void {
@@ -232,12 +249,14 @@ export class CatalogPage implements OnInit {
       return;
     }
 
-    this.page.update(currentPage => currentPage - 1);
-    this.loadCatalog();
+    this.localErrorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.catalogState.updatePage(this.page() - 1);
   }
 
   addToTeam(pokemon: PokemonListItem): void {
-    this.errorMessage.set(null);
+    this.localErrorMessage.set(null);
     this.successMessage.set(null);
 
     this.dreamTeamService.addPokemon({ pokeApiId: pokemon.pokeApiId }).subscribe({
@@ -250,9 +269,22 @@ export class CatalogPage implements OnInit {
         });
       },
       error: error => {
-        this.errorMessage.set(getUserFriendlyErrorMessage(error, 'We could not add this Pokémon to your Dream Team.'));
+        this.localErrorMessage.set(
+          getUserFriendlyErrorMessage(
+            error,
+            'We could not add this Pokémon to your Dream Team.'
+          )
+        );
       }
     });
+  }
+
+  private syncFiltersFromCatalogState(): void {
+    const state = this.catalogState.pageState();
+
+    this.search = state.search;
+    this.type = state.type;
+    this.sortBy = state.sortBy || 'name';
   }
 
   private loadTeamStatus(): void {
